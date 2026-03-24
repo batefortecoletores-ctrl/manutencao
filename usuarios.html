@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Usuários — Sistema de Manutenção</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/usuarios.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1e293b">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="header-left">
+        <button class="hamburger-btn" id="hambBtn">
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+        </button>
+        <h1>👥 Usuários <span>Gestão & Permissões</span></h1>
+    </div>
+    <div class="header-right">
+        <span class="user-chip" id="userChip">Admin</span>
+        <button class="btn-logout" id="btnLogout">Sair</button>
+    </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="overlay" id="overlay"></div>
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-head"><h2>Navegação</h2><p>Sistema de Manutenção</p></div>
+    <div class="s-section">
+        <div class="s-title">Operação</div>
+        <a href="ocorrencias.html" class="s-item"><span class="s-icon">📋</span> Central de Ocorrências</a>
+        <div class="s-title">Manutenção</div>
+        <a href="predial.html" class="s-item"><span class="s-icon">🏢</span> Predial</a>
+        <a href="equipamentos.html" class="s-item"><span class="s-icon">⚙️</span> Equipamentos</a>
+        <div class="s-title">Check-lists</div>
+        <a href="checklist-painel.html" class="s-item"><span class="s-icon">✅</span> Painel Check-lists</a>
+        <a href="checklist.html" class="s-item"><span class="s-icon">📝</span> Novo Check-list</a>
+        <div class="s-title">Gestão</div>
+        <a href="usuarios.html" class="s-item active"><span class="s-icon">👥</span> Usuários</a>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+    <div class="hero">
+        <div>
+            <h2>👥 Gestão de Usuários</h2>
+            <p>Cadastre, edite permissões e configure notificações WhatsApp</p>
+        </div>
+        <div class="hero-actions">
+            <button class="btn-hero primary" onclick="abrirModalNovo()">➕ Novo Usuário</button>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat"><div class="stat-num" id="sTotal">–</div><div class="stat-lbl">Total</div></div>
+        <div class="stat s-admin"><div class="stat-num" id="sAdmin">–</div><div class="stat-lbl">Admins</div></div>
+        <div class="stat s-ativo"><div class="stat-num" id="sAtivo">–</div><div class="stat-lbl">Ativos</div></div>
+        <div class="stat s-tel"><div class="stat-num" id="sTel">–</div><div class="stat-lbl">Com WhatsApp</div></div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">👥 Lista de Usuários</div>
+        </div>
+        <div class="search-row">
+            <input type="text" class="search-input" id="searchInput" placeholder="🔍 Buscar por nome, usuário, perfil...">
+            <select class="filter-sel" id="filtPerfil">
+                <option value="">Todos os perfis</option>
+                <option value="admin">Admin</option>
+                <option value="manager">Gerente</option>
+                <option value="operador">Operador</option>
+                <option value="viewer">Visualizador</option>
+            </select>
+            <select class="filter-sel" id="filtStatus">
+                <option value="">Todos</option>
+                <option value="ativo">Ativos</option>
+                <option value="inativo">Inativos</option>
+            </select>
+        </div>
+        <div id="listaUsuarios">
+            <div class="loading"><div class="spinner"></div><p>Carregando usuários...</p></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== MODAL CRIAR / EDITAR ===== -->
+<div class="modal" id="modalForm">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h2 id="modalFormTitle">➕ Novo Usuário</h2>
+            <button class="modal-close" onclick="fecharModal('modalForm')">×</button>
+        </div>
+        <div id="alertForm" class="alert"></div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Nome completo *</label>
+                <input class="form-input" id="f_nome" placeholder="Ex: João da Silva">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Usuário (login) *</label>
+                <input class="form-input" id="f_usuario" placeholder="Ex: joao.silva">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Senha *</label>
+                <input class="form-input" id="f_senha" type="password" placeholder="Mínimo 6 caracteres">
+                <span class="form-hint" id="f_senha_hint">Mínimo 6 caracteres</span>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Perfil *</label>
+                <select class="form-select" id="f_perfil" onchange="onPerfilChange()">
+                    <option value="operador">Operador</option>
+                    <option value="viewer">Visualizador</option>
+                    <option value="manager">Gerente</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select class="form-select" id="f_ativo">
+                    <option value="true">Ativo</option>
+                    <option value="false">Inativo</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- WHATSAPP -->
+        <div class="wa-section">
+            <h3>💬 WhatsApp para notificações</h3>
+            <div class="wa-row">
+                <div class="form-group" style="flex:1;min-width:180px">
+                    <label class="form-label">Número (com DDD e código país)</label>
+                    <input class="form-input" id="f_telefone" placeholder="+55 11 99999-9999" oninput="atualizarPreviewTel()">
+                    <span class="form-hint">Formato: +55 11 99999-9999</span>
+                </div>
+                <button class="btn btn-whatsapp btn-sm" onclick="testarWhatsApp()" type="button">💬 Testar</button>
+            </div>
+            <div class="phone-preview" id="telPreview" style="display:none">
+                <span style="font-size:20px">💬</span>
+                <span id="telPreviewText"></span>
+                <span style="color:var(--green);font-weight:700;margin-left:auto;">✓ Notificações ativas</span>
+            </div>
+        </div>
+
+        <!-- PERMISSÕES (oculto para admin) -->
+        <div id="permsSection" class="perms-section">
+
+            <div class="perms-group-title">👥 Usuários</div>
+            <div class="perms-grid">
+                <label class="perm-card" onclick="togglePerm(this)">
+                    <input type="checkbox" value="perm_usuarios_visualizar">
+                    <div class="perm-box">✓</div>
+                    <div class="perm-text"><strong>Visualizar</strong><small>Ver lista de usuários</small></div>
+                </label>
+                <label class="perm-card" onclick="togglePerm(this)">
+                    <input type="checkbox" value="perm_usuarios_criar">
+                    <div class="perm-box">✓</div>
+                    <div class="perm-text"><strong>Criar</strong><small>Cadastrar novos usuários</small></div>
+                </label>
+                <label class="perm-card" onclick="togglePerm(this)">
+                    <input type="checkbox" value="perm_usuarios_editar">
+                    <div class="perm-box">✓</div>
+                    <div class="perm-text"><strong>Editar</strong><small>Editar dados de usuários</small></div>
+                </label>
+                <label class="perm-card" onclick="togglePerm(this)">
+                    <input type="checkbox" value="perm_usuarios_excluir">
+                    <div class="perm-box">✓</div>
+                    <div class="perm-text"><strong>Excluir</strong><small>Remover usuários</small></div>
+                </label>
+                <label class="perm-card" onclick="togglePerm(this)">
+                    <input type="checkbox" value="perm_usuarios_permissoes">
+                    <div class="perm-box">✓</div>
+                    <div class="perm-text"><strong>Permissões</strong><small>Gerir permissões</small></div>
+                </label>
+            </div>
+
+            <div class="perms-group-title">🏢 Predial</div>
+            <div class="perms-grid">
+                <label class="perm-card" onclick="togglePerm(this)">
+                    <input type="checkbox" value="perm_predial_visualizar">
+                    <div class="perm-box">✓</div>
+                    <div class="perm-text"><strong>Visualizar</strong><small>Ver ocorrências prediais</small></div>
+                </label>
+                <label class="perm-card" onclick="togglePerm(this)">
+                    <input type="checkbox" value="perm_predial_criar">
+                    <div class="perm-box">✓</div>
+                    <div class="perm-text"><strong>Criar</strong><small>Abrir ocorrências prediais</small></div>
+                </label>
+                <label class="perm-card" onclick="togglePerm(this)">
+                    <input type="checkbox" value="perm_predial_editar">
+                    <div class="perm-box">✓</div>
+                    <div class="perm-text"><strong>Editar</strong><small>Editar ocorrências prediais</small></div>
+                </label>
+            </div>
+
+            <div class="perms-group-title">⚙️ Equipamentos</div>
+            <div class="perms-grid">
+                <label class="perm-card" onclick="togglePerm(this)">
+                    <input type="checkbox" value="perm_equipamentos_visualizar">
+                    <div class="perm-box">✓</div>
+                    <div class="perm-text"><strong>Visualizar</strong><small>Ver ocorrências de equip.</small></div>
+                </label>
+                <label class="perm-card" onclick="togglePerm(this)">
+                    <input type="checkbox" value="perm_equipamentos_criar">
+                    <div class="perm-box">✓</div>
+                    <div class="perm-text"><strong>Criar</strong><small>Abrir ocorrências de equip.</small></div>
+                </label>
+                <label class="perm-card" onclick="togglePerm(this)">
+                    <input type="checkbox" value="perm_equipamentos_editar">
+                    <div class="perm-box">✓</div>
+                    <div class="perm-text"><strong>Editar</strong><small>Editar ocorrências de equip.</small></div>
+                </label>
+            </div>
+
+        </div>
+
+        <div class="modal-foot">
+            <button class="btn btn-secondary" onclick="fecharModal('modalForm')">Cancelar</button>
+            <button class="btn" id="btnSalvarUser" onclick="salvarUsuario()">💾 Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL DETALHES ===== -->
+<div class="modal" id="modalDetalhe">
+    <div class="modal-box" style="max-width:720px">
+        <div class="modal-head">
+            <h2 id="modalDetalheTitle">👤 Detalhes</h2>
+            <button class="modal-close" onclick="fecharModal('modalDetalhe')">×</button>
+        </div>
+        <div id="modalDetalheConteudo"></div>
+        <div class="modal-foot">
+            <button class="btn btn-secondary" onclick="fecharModal('modalDetalhe')">Fechar</button>
+            <button class="btn btn-outline" id="btnEditarDetalhe">✏️ Editar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL TESTE WHATSAPP ===== -->
+<div class="modal" id="modalWA">
+    <div class="modal-box" style="max-width:460px">
+        <div class="modal-head">
+            <h2>💬 Testar Notificação WhatsApp</h2>
+            <button class="modal-close" onclick="fecharModal('modalWA')">×</button>
+        </div>
+        <div id="alertWA" class="alert"></div>
+        <div class="wa-test-box">
+            <p style="font-size:13px;font-weight:700;color:#166534;margin-bottom:8px;">Mensagem de teste:</p>
+            <textarea id="waTestMsg">Olá! Esta é uma mensagem de teste do Sistema de Manutenção. Suas notificações estão configuradas corretamente! ✅</textarea>
+        </div>
+        <p style="font-size:12px;color:var(--text-light);margin-top:10px">Será enviado para: <strong id="waTestNum"></strong></p>
+        <div class="modal-foot">
+            <button class="btn btn-secondary" onclick="fecharModal('modalWA')">Cancelar</button>
+            <button class="btn btn-whatsapp" onclick="enviarTesteWA()">💬 Enviar via WhatsApp</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL EXCLUSÃO ===== -->
+<div class="modal" id="modalDel">
+    <div class="modal-box" style="max-width:400px">
+        <div class="modal-head">
+            <h2>🗑️ Confirmar Exclusão</h2>
+            <button class="modal-close" onclick="fecharModal('modalDel')">×</button>
+        </div>
+        <p style="font-size:15px;color:var(--text-mid);line-height:1.6">
+            Deseja realmente remover o usuário <strong id="delNome"></strong>? Esta ação não pode ser desfeita.
+        </p>
+        <div class="modal-foot">
+            <button class="btn btn-secondary" onclick="fecharModal('modalDel')">Cancelar</button>
+            <button class="btn btn-danger" id="btnConfirmDel">🗑️ Excluir</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ================================================================
+   CONFIG
+   ================================================================ */
+const SUPABASE_URL = 'https://wcfrwsgnxochxvwhxnvy.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZnJ3c2dueG9jaHh2d2h4bnZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MzExMDgsImV4cCI6MjA4MzIwNzEwOH0.Yb4cT5chXp3S8NZaWbLpv436HzxGCO7CZTruPpOPDdU';
+
+const WA_PROVIDER       = 'direct_link'; // 'direct_link' | 'callmebot'
+const WA_CALLMEBOT_API  = 'https://api.callmebot.com/whatsapp.php';
+
+// Campos exatos da tabela usuarios
+const ALL_PERMS = [
+    'perm_usuarios_visualizar',
+    'perm_usuarios_criar',
+    'perm_usuarios_editar',
+    'perm_usuarios_excluir',
+    'perm_usuarios_permissoes',
+    'perm_predial_visualizar',
+    'perm_predial_criar',
+    'perm_predial_editar',
+    'perm_equipamentos_visualizar',
+    'perm_equipamentos_criar',
+    'perm_equipamentos_editar'
+];
+
+const PERMS_LABELS = {
+    perm_usuarios_visualizar:    'Ver Usuários',
+    perm_usuarios_criar:         'Criar Usuários',
+    perm_usuarios_editar:        'Editar Usuários',
+    perm_usuarios_excluir:       'Excluir Usuários',
+    perm_usuarios_permissoes:    'Gerir Permissões',
+    perm_predial_visualizar:     'Ver Predial',
+    perm_predial_criar:          'Criar Predial',
+    perm_predial_editar:         'Editar Predial',
+    perm_equipamentos_visualizar:'Ver Equipamentos',
+    perm_equipamentos_criar:     'Criar Equipamentos',
+    perm_equipamentos_editar:    'Editar Equipamentos'
+};
+
+const AVATAR_COLORS = ['#5b21b6','#0369a1','#065f46','#92400e','#881337','#1e3a8a','#3f6212'];
+
+let db, currentUser;
+let allUsers = [], filteredUsers = [];
+let editingId = null, deleteTargetId = null;
+
+/* ================================================================
+   BOOT
+   ================================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('currentUser');
+    if (!saved) { window.location.href = 'login.html'; return; }
+    currentUser = JSON.parse(saved);
+
+    const podeAcessar = currentUser.perfil === 'admin'
+        || currentUser.perm_usuarios_visualizar
+        || currentUser.perm_usuarios_criar
+        || currentUser.perm_usuarios_editar
+        || currentUser.perm_usuarios_permissoes;
+
+    if (!podeAcessar) {
+        alert('⛔ Acesso negado.');
+        window.location.href = 'menu.html';
+        return;
+    }
+
+    document.getElementById('userChip').textContent = currentUser.nome || 'Admin';
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    setupSidebar();
+    setupSearch();
+    document.getElementById('btnLogout').addEventListener('click', logout);
+    loadUsuarios();
+    // Notificações
+    window.notifInit?.();
+    window.pushInit?.();
+});
+
+/* ================================================================
+   SIDEBAR
+   ================================================================ */
+function setupSidebar() {
+    const btn = document.getElementById('hambBtn');
+    const sb  = document.getElementById('sidebar');
+    const ov  = document.getElementById('overlay');
+    btn.addEventListener('click', () => {
+        btn.classList.toggle('active'); sb.classList.toggle('active'); ov.classList.toggle('active');
+    });
+    ov.addEventListener('click', closeSidebar);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSidebar(); fecharTodosModais(); } });
+}
+function closeSidebar() {
+    ['hambBtn','sidebar','overlay'].forEach(id => document.getElementById(id).classList.remove('active'));
+}
+
+/* ================================================================
+   LOAD — usa exatamente os campos da tabela
+   ================================================================ */
+async function loadUsuarios() {
+    document.getElementById('listaUsuarios').innerHTML =
+        '<div class="loading"><div class="spinner"></div><p>Carregando...</p></div>';
+
+    // Seleciona os campos exatos da tabela
+    const SELECT_FIELDS = [
+        'id','nome','usuario','senha','perfil','ativo','telefone','created_at','updated_at',
+        ...ALL_PERMS
+    ].join(',');
+
+    try {
+        const { data, error } = await db
+            .from('usuarios')
+            .select(SELECT_FIELDS)
+            .order('nome', { ascending: true });
+        if (error) throw error;
+        allUsers = data || [];
+    } catch (e) {
+        console.warn('Supabase indisponível, usando localStorage:', e.message);
+        allUsers = JSON.parse(localStorage.getItem('usuarios') || '[]');
+    }
+
+    filteredUsers = [...allUsers];
+    calcStats();
+    renderTabela(filteredUsers);
+}
+
+function calcStats() {
+    document.getElementById('sTotal').textContent = allUsers.length;
+    document.getElementById('sAdmin').textContent = allUsers.filter(u => u.perfil === 'admin').length;
+    // Campo 'ativo' é boolean na tabela
+    document.getElementById('sAtivo').textContent = allUsers.filter(u => u.ativo !== false).length;
+    document.getElementById('sTel').textContent   = allUsers.filter(u => u.telefone && u.telefone.trim()).length;
+}
+
+/* ================================================================
+   RENDER
+   ================================================================ */
+function avatarColor(nome) {
+    const sum = (nome || 'U').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+}
+function initials(nome) {
+    if (!nome) return '?';
+    const p = nome.trim().split(' ');
+    return (p[0][0] + (p[1] ? p[1][0] : '')).toUpperCase();
+}
+function perfilBadge(p) {
+    const map = { admin:'b-admin Admin', manager:'b-manager Gerente', operador:'b-operador Operador', viewer:'b-viewer Visualizador' };
+    const v = (map[p] || 'b-viewer ' + p).split(' ');
+    return `<span class="badge ${v[0]}">${v.slice(1).join(' ')}</span>`;
+}
+
+function renderTabela(lista) {
+    const el = document.getElementById('listaUsuarios');
+    if (!lista.length) {
+        el.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><p>Nenhum usuário encontrado.</p></div>';
+        return;
+    }
+
+    const podeEditar  = currentUser.perfil === 'admin' || currentUser.perm_usuarios_editar;
+    const podeExcluir = currentUser.perfil === 'admin' || currentUser.perm_usuarios_excluir;
+
+    let html = `<div class="count-strip">📊 ${lista.length} usuário(s)</div>
+    <div class="table-wrap"><table>
+    <thead><tr>
+        <th>Usuário</th><th>Login</th><th>Perfil</th>
+        <th>WhatsApp</th><th>Status</th><th>Criado em</th><th>Ações</th>
+    </tr></thead><tbody>`;
+
+    lista.forEach(u => {
+        // 'ativo' é boolean: true = ativo, false = inativo
+        const isAtivo = u.ativo !== false;
+        const tel     = u.telefone
+            ? `<span class="badge b-tem-tel">💬 ${escStr(u.telefone)}</span>`
+            : `<span class="badge b-sem-tel">–</span>`;
+        const status  = isAtivo
+            ? `<span class="badge b-ativo">Ativo</span>`
+            : `<span class="badge b-inativo">Inativo</span>`;
+        const criado  = u.created_at ? new Date(u.created_at).toLocaleDateString('pt-BR') : '–';
+
+        const waBtn   = u.telefone
+            ? `<button class="btn btn-sm btn-whatsapp" title="Enviar WhatsApp"
+                onclick="abrirTesteWA('${u.id}','${escStr(u.nome)}','${escStr(u.telefone)}')">💬</button>` : '';
+        const editBtn = podeEditar
+            ? `<button class="btn btn-sm" onclick="abrirEditar('${u.id}')">✏️</button>` : '';
+        const delBtn  = podeExcluir
+            ? `<button class="btn btn-sm btn-danger" onclick="confirmarDeletar('${u.id}','${escStr(u.nome)}')">🗑️</button>` : '';
+
+        html += `<tr>
+            <td><div style="display:flex;align-items:center;gap:10px">
+                <div class="avatar" style="background:${avatarColor(u.nome)}">${initials(u.nome)}</div>
+                <strong>${escStr(u.nome)}</strong>
+            </div></td>
+            <td style="color:var(--text-mid);font-size:13px">${escStr(u.usuario || '')}</td>
+            <td>${perfilBadge(u.perfil)}</td>
+            <td>${tel}</td>
+            <td>${status}</td>
+            <td style="font-size:12px;color:var(--text-light)">${criado}</td>
+            <td><div class="action-btns">
+                <button class="btn btn-sm btn-outline" onclick="verDetalhe('${u.id}')">👁️ Ver</button>
+                ${editBtn}${waBtn}${delBtn}
+            </div></td>
+        </tr>`;
+    });
+
+    html += '</tbody></table></div>';
+    el.innerHTML = html;
+}
+
+function escStr(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ================================================================
+   SEARCH & FILTER
+   ================================================================ */
+function setupSearch() {
+    document.getElementById('searchInput').addEventListener('input', aplicarFiltros);
+    document.getElementById('filtPerfil').addEventListener('change', aplicarFiltros);
+    document.getElementById('filtStatus').addEventListener('change', aplicarFiltros);
+}
+function aplicarFiltros() {
+    const q    = document.getElementById('searchInput').value.toLowerCase().trim();
+    const pfil = document.getElementById('filtPerfil').value;
+    const sfil = document.getElementById('filtStatus').value;
+    filteredUsers = allUsers.filter(u => {
+        const hay = `${u.nome} ${u.usuario} ${u.perfil}`.toLowerCase();
+        if (q && !hay.includes(q)) return false;
+        if (pfil && u.perfil !== pfil) return false;
+        if (sfil === 'ativo'  && u.ativo === false)  return false;
+        if (sfil === 'inativo' && u.ativo !== false) return false;
+        return true;
+    });
+    renderTabela(filteredUsers);
+}
+
+/* ================================================================
+   MODAL CRIAR / EDITAR
+   ================================================================ */
+function abrirModalNovo() {
+    editingId = null;
+    document.getElementById('modalFormTitle').textContent = '➕ Novo Usuário';
+    document.getElementById('f_nome').value     = '';
+    document.getElementById('f_usuario').value  = '';
+    document.getElementById('f_senha').value    = '';
+    document.getElementById('f_senha_hint').textContent = 'Mínimo 6 caracteres';
+    document.getElementById('f_perfil').value   = 'operador';
+    document.getElementById('f_ativo').value    = 'true';
+    document.getElementById('f_telefone').value = '';
+    document.getElementById('telPreview').style.display = 'none';
+    limparPerms();
+    onPerfilChange();
+    showAlert('alertForm','','');
+    document.getElementById('modalForm').classList.add('open');
+}
+
+function abrirEditar(id) {
+    const u = allUsers.find(x => String(x.id) === String(id));
+    if (!u) return;
+    editingId = u.id;
+    document.getElementById('modalFormTitle').textContent = '✏️ Editar Usuário';
+    document.getElementById('f_nome').value     = u.nome    || '';
+    document.getElementById('f_usuario').value  = u.usuario || '';
+    document.getElementById('f_senha').value    = '';
+    document.getElementById('f_senha_hint').textContent = 'Deixe em branco para manter a senha atual';
+    document.getElementById('f_perfil').value   = u.perfil  || 'operador';
+    document.getElementById('f_ativo').value    = u.ativo === false ? 'false' : 'true';
+    document.getElementById('f_telefone').value = u.telefone || '';
+    atualizarPreviewTel();
+    limparPerms();
+    ALL_PERMS.forEach(p => {
+        if (u[p]) {
+            const inp = document.querySelector(`.perm-card input[value="${p}"]`);
+            if (inp) { inp.checked = true; inp.closest('.perm-card').classList.add('checked'); }
+        }
+    });
+    onPerfilChange();
+    showAlert('alertForm','','');
+    document.getElementById('modalForm').classList.add('open');
+}
+
+function limparPerms() {
+    document.querySelectorAll('.perm-card').forEach(c => {
+        c.classList.remove('checked');
+        c.querySelector('input').checked = false;
+    });
+}
+
+function onPerfilChange() {
+    const p = document.getElementById('f_perfil').value;
+    document.getElementById('permsSection').style.display = p === 'admin' ? 'none' : 'block';
+    if (p === 'manager') {
+        document.querySelectorAll('.perm-card').forEach(c => {
+            c.classList.add('checked');
+            c.querySelector('input').checked = true;
+        });
+    }
+}
+
+function togglePerm(card) {
+    card.classList.toggle('checked');
+    card.querySelector('input').checked = card.classList.contains('checked');
+}
+
+function atualizarPreviewTel() {
+    const tel = document.getElementById('f_telefone').value.trim();
+    const prv = document.getElementById('telPreview');
+    if (tel.length > 5) {
+        document.getElementById('telPreviewText').textContent = tel;
+        prv.style.display = 'flex';
+    } else {
+        prv.style.display = 'none';
+    }
+}
+
+/* ================================================================
+   SALVAR — payload usa campos exatos da tabela
+   ================================================================ */
+async function salvarUsuario() {
+    const nome    = document.getElementById('f_nome').value.trim();
+    const usuario = document.getElementById('f_usuario').value.trim();
+    const senha   = document.getElementById('f_senha').value.trim();
+    const perfil  = document.getElementById('f_perfil').value;
+    // campo boolean na tabela
+    const ativo   = document.getElementById('f_ativo').value === 'true';
+    const tel     = document.getElementById('f_telefone').value.trim();
+
+    if (!nome || !usuario) { showAlert('alertForm','⚠️ Nome e usuário são obrigatórios.','error'); return; }
+    if (!editingId && !senha) { showAlert('alertForm','⚠️ Informe uma senha para o novo usuário.','error'); return; }
+    if (senha && senha.length < 6) { showAlert('alertForm','⚠️ Senha deve ter mínimo 6 caracteres.','error'); return; }
+
+    // Payload com campos exatos da tabela
+    const payload = { nome, usuario, perfil, ativo, telefone: tel };
+    if (senha) payload.senha = senha;
+
+    if (perfil === 'admin') {
+        ALL_PERMS.forEach(p => payload[p] = true);
+    } else {
+        ALL_PERMS.forEach(p => {
+            const inp = document.querySelector(`.perm-card input[value="${p}"]`);
+            payload[p] = inp ? inp.checked : false;
+        });
+    }
+
+    const btn = document.getElementById('btnSalvarUser');
+    btn.disabled = true; btn.textContent = '⏳ Salvando...';
+
+    try {
+        if (editingId) {
+            const { error } = await db.from('usuarios').update(payload).eq('id', editingId);
+            if (error) throw error;
+            if (String(currentUser.id) === String(editingId)) {
+                localStorage.setItem('currentUser', JSON.stringify({ ...currentUser, ...payload }));
+            }
+        } else {
+            const { error } = await db.from('usuarios').insert([payload]);
+            if (error) throw error;
+        }
+        showAlert('alertForm','✅ Usuário salvo com sucesso!','success');
+        setTimeout(() => { fecharModal('modalForm'); loadUsuarios(); }, 900);
+    } catch (e) {
+        try {
+            let list = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            if (editingId) {
+                list = list.map(u => String(u.id) === String(editingId) ? { ...u, ...payload } : u);
+            } else {
+                payload.id = Date.now();
+                payload.created_at = new Date().toISOString();
+                list.push(payload);
+            }
+            localStorage.setItem('usuarios', JSON.stringify(list));
+            showAlert('alertForm','✅ Salvo localmente (sem banco).','success');
+            setTimeout(() => { fecharModal('modalForm'); loadUsuarios(); }, 900);
+        } catch (e2) {
+            showAlert('alertForm','❌ Erro ao salvar: ' + e.message,'error');
+        }
+    } finally {
+        btn.disabled = false; btn.textContent = '💾 Salvar';
+    }
+}
+
+/* ================================================================
+   VER DETALHE
+   ================================================================ */
+function verDetalhe(id) {
+    const u = allUsers.find(x => String(x.id) === String(id));
+    if (!u) return;
+    document.getElementById('modalDetalheTitle').textContent = `👤 ${u.nome}`;
+
+    const activePerms = ALL_PERMS.filter(p => u[p]).map(p => PERMS_LABELS[p]);
+    const permsHtml = u.perfil === 'admin'
+        ? '<span class="badge b-admin">Todas as permissões (Admin)</span>'
+        : activePerms.length
+            ? activePerms.map(p => `<span class="badge" style="background:var(--purple-pale);color:var(--purple);margin:2px">${p}</span>`).join('')
+            : '<span style="color:var(--text-light);font-size:13px">Nenhuma permissão ativa</span>';
+
+    const criado     = u.created_at ? new Date(u.created_at).toLocaleString('pt-BR') : '–';
+    const atualizado = u.updated_at ? new Date(u.updated_at).toLocaleString('pt-BR') : '–';
+
+    document.getElementById('modalDetalheConteudo').innerHTML = `
+        <div class="user-detail-header">
+            <div class="avatar-lg" style="background:${avatarColor(u.nome)}">${initials(u.nome)}</div>
+            <div>
+                <h3>${escStr(u.nome)}</h3>
+                <p>@${escStr(u.usuario || '')} • ${perfilBadge(u.perfil)}</p>
+                <div style="margin-top:6px">
+                    ${u.ativo === false ? '<span class="badge b-inativo">Inativo</span>' : '<span class="badge b-ativo">Ativo</span>'}
+                </div>
+            </div>
+        </div>
+        <div class="info-grid">
+            <div class="info-box"><strong>Login (usuário)</strong><span>${escStr(u.usuario || '–')}</span></div>
+            <div class="info-box"><strong>WhatsApp</strong><span style="color:${u.telefone ? 'var(--whatsapp-dark)' : 'var(--text-light)'}">
+                ${u.telefone ? '💬 ' + escStr(u.telefone) : 'Não configurado'}
+            </span></div>
+            <div class="info-box"><strong>Criado em</strong><span style="font-size:13px">${criado}</span></div>
+            <div class="info-box"><strong>Atualizado em</strong><span style="font-size:13px">${atualizado}</span></div>
+        </div>
+        <div>
+            <strong style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;display:block;margin-bottom:8px">🔐 Permissões ativas</strong>
+            <div style="display:flex;flex-wrap:wrap;gap:4px">${permsHtml}</div>
+        </div>
+        ${u.telefone ? `<div style="margin-top:16px">
+            <button class="btn btn-whatsapp btn-sm"
+                onclick="abrirTesteWA('${u.id}','${escStr(u.nome)}','${escStr(u.telefone)}')">
+                💬 Enviar mensagem de teste
+            </button>
+        </div>` : ''}
+    `;
+    document.getElementById('btnEditarDetalhe').onclick = () => { fecharModal('modalDetalhe'); abrirEditar(id); };
+    document.getElementById('modalDetalhe').classList.add('open');
+}
+
+/* ================================================================
+   DELETAR
+   ================================================================ */
+function confirmarDeletar(id, nome) {
+    deleteTargetId = id;
+    document.getElementById('delNome').textContent = nome;
+    document.getElementById('btnConfirmDel').onclick = deletarUsuario;
+    document.getElementById('modalDel').classList.add('open');
+}
+async function deletarUsuario() {
+    if (!deleteTargetId) return;
+    try {
+        const { error } = await db.from('usuarios').delete().eq('id', deleteTargetId);
+        if (error) throw error;
+    } catch (e) {
+        let list = JSON.parse(localStorage.getItem('usuarios') || '[]');
+        localStorage.setItem('usuarios', JSON.stringify(list.filter(u => String(u.id) !== String(deleteTargetId))));
+    }
+    fecharModal('modalDel');
+    loadUsuarios();
+}
+
+/* ================================================================
+   WHATSAPP
+   ================================================================ */
+function testarWhatsApp() {
+    const tel  = document.getElementById('f_telefone').value.trim();
+    const nome = document.getElementById('f_nome').value.trim() || 'Usuário';
+    if (!tel) { showAlert('alertForm','⚠️ Informe o número de telefone primeiro.','error'); return; }
+    abrirTesteWA(null, nome, tel);
+}
+function abrirTesteWA(id, nome, tel) {
+    document.getElementById('waTestNum').textContent = tel;
+    document.getElementById('waTestMsg').value =
+        `Olá, ${nome}! Esta é uma notificação de teste do Sistema de Manutenção. ✅\nSuas notificações estão configuradas corretamente.`;
+    showAlert('alertWA','','');
+    document.getElementById('modalWA').classList.add('open');
+}
+function enviarTesteWA() {
+    const tel = document.getElementById('waTestNum').textContent.trim();
+    const msg = document.getElementById('waTestMsg').value.trim();
+    if (!msg) { showAlert('alertWA','⚠️ Digite uma mensagem.','error'); return; }
+    enviarWhatsApp(tel, msg, 'alertWA');
+}
+function enviarWhatsApp(tel, msg, alertEl) {
+    const n = tel.replace(/[^\d+]/g, '');
+    if (WA_PROVIDER === 'callmebot') {
+        fetch(`${WA_CALLMEBOT_API}?phone=${encodeURIComponent(n)}&text=${encodeURIComponent(msg)}&apikey=SUA_APIKEY`)
+            .then(() => { if (alertEl) showAlert(alertEl,'✅ Enviado via CallMeBot!','success'); })
+            .catch(e => { if (alertEl) showAlert(alertEl,'❌ Erro: ' + e.message,'error'); });
+    } else {
+        window.open(`https://wa.me/${n.replace(/^\+/,'')}?text=${encodeURIComponent(msg)}`, '_blank');
+        if (alertEl) showAlert(alertEl,'✅ WhatsApp aberto! Clique em Enviar no app.','success');
+    }
+}
+
+// Função global acessível por outros arquivos
+window.notificarUsuario = async function(nomeOuId, mensagem) {
+    let u = allUsers.find(x =>
+        String(x.id) === String(nomeOuId) ||
+        (x.nome || '').toLowerCase() === String(nomeOuId).toLowerCase()
+    );
+    if (!u && db) {
+        try {
+            const { data } = await db.from('usuarios')
+                .select('id,nome,usuario,telefone')
+                .or(`id.eq.${nomeOuId},nome.ilike.%${nomeOuId}%`)
+                .maybeSingle();
+            u = data;
+        } catch {}
+    }
+    if (u?.telefone) enviarWhatsApp(u.telefone, mensagem, null);
+};
+
+/* ================================================================
+   UTILS
+   ================================================================ */
+function showAlert(elId, msg, type) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (!msg) { el.className = 'alert'; el.style.display = 'none'; return; }
+    el.className = `alert alert-${type} show`;
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+function fecharTodosModais() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('open')); }
+document.querySelectorAll('.modal').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+function logout() {
+    if (confirm('Deseja realmente sair?')) {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'login.html';
+    }
+}
+</script>
+    <script src="notifications.js"></script>
+    <script src="push.js"></script>
+</body>
+</html>

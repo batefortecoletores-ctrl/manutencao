@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Ocorrências - Sistema de Manutenção</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/ocorrencias.css">
+    <meta name="theme-color" content="#1e293b">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="header-left">
+        <button class="hamburger-btn" id="hamburgerBtn">
+            <span class="hamburger-line"></span><span class="hamburger-line"></span><span class="hamburger-line"></span>
+        </button>
+        <h1>📋 Central de Ocorrências</h1>
+    </div>
+    <div class="user-info">
+        <span class="user-name" id="userName"></span>
+        <span class="user-badge" id="userBadge">Usuário</span>
+        <button class="btn-logout" id="btnLogout">Sair</button>
+    </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header"><h2>Menu de Navegação</h2><p>Selecione uma opção abaixo</p></div>
+    <div class="menu-section">
+        <div class="menu-section-title">Principal</div>
+        <div class="menu-item active" onclick="closeSidebar()"><span class="menu-icon">📋</span><span>Ocorrências</span></div>
+    </div>
+        <div class="menu-section">
+            <div class="menu-section-title">Operação</div>
+            <a href="ocorrencias.html" style="text-decoration:none;">
+                <div class="menu-item" id="menuOcorrenciasExt">
+                    <span class="menu-icon">📋</span>
+                    <span>Central de Ocorrências</span>
+                </div>
+            </a>
+            <div class="menu-section-title">Manutenção</div>
+            <div class="menu-item" id="menuPredial">
+                <span class="menu-icon">🏢</span>
+                <span>Predial</span>
+            </div>
+            <div class="menu-item" id="menuEquipamentos">
+                <span class="menu-icon">⚙️</span>
+                <span>Equipamentos</span>
+            </div>
+            <div class="menu-item" id="menuOcorrencias">
+                <span class="menu-icon">📋</span>
+                <span>Ocorrências</span>
+            </div>
+        </div>
+        <a href="checklist-painel.html" class="menu-item"><span class="menu-icon">✅</span><span>Painel Check-lists</span></a>
+        <a href="checklist.html" class="menu-item"><span class="menu-icon">📝</span><span>Novo Check-list</span></a>
+
+        <div class="menu-section">
+            <div class="menu-section-title">Gestão</div>
+            <a href="usuarios.html" class="menu-item" id="menuUsuarios">
+                <span class="menu-icon">👥</span>
+                <span>Usuários</span>
+            </a>
+        </div>
+
+</div>
+
+<!-- MAIN -->
+<div class="main-container">
+    <div class="hero-strip">
+        <div>
+            <h2>📋 Central de Ocorrências</h2>
+            <p>Visualize e gerencie todas as manutenções prediais e de equipamentos</p>
+        </div>
+        <div class="hero-actions">
+            <button class="btn-hero" onclick="abrirNovaOcorrencia('predial')">🏢 Nova Predial</button>
+            <button class="btn-hero" onclick="abrirNovaOcorrencia('equipamento')">⚙️ Novo Equipamento</button>
+        </div>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card"><div class="stat-number" id="statTotal">–</div><div class="stat-label">Total</div></div>
+        <div class="stat-card pendente"><div class="stat-number" id="statPendente">–</div><div class="stat-label">Pendentes</div></div>
+        <div class="stat-card andamento"><div class="stat-number" id="statAndamento">–</div><div class="stat-label">Em Andamento</div></div>
+        <div class="stat-card concluido"><div class="stat-number" id="statConcluido">–</div><div class="stat-label">Concluídos</div></div>
+        <div class="stat-card urgente"><div class="stat-number" id="statUrgente">–</div><div class="stat-label">Urgentes</div></div>
+    </div>
+
+    <div class="card">
+        <div class="filters-section">
+            <h3>🔍 Filtros</h3>
+            <div class="form-grid">
+                <div class="form-group"><label>Tipo</label>
+                    <select id="filtroTipo"><option value="">Todos</option><option value="predial">Predial</option><option value="equipamento">Equipamento</option></select>
+                </div>
+                <div class="form-group"><label>Status</label>
+                    <select id="filtroStatus"><option value="">Todos</option><option value="pendente">Pendente</option><option value="andamento">Em Andamento</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select>
+                </div>
+                <div class="form-group"><label>Prioridade</label>
+                    <select id="filtroPrioridade"><option value="">Todas</option><option value="baixa">Baixa</option><option value="media">Média</option><option value="alta">Alta</option><option value="urgente">Urgente</option></select>
+                </div>
+                <div class="form-group"><label>Criado por</label><select id="filtroCriadoPor"><option value="">Todos</option></select></div>
+                <div class="form-group"><label>Data inicial</label><input type="date" id="filtroDataInicio"></div>
+                <div class="form-group"><label>Data final</label><input type="date" id="filtroDataFim"></div>
+            </div>
+            <div class="filter-actions">
+                <button class="btn" onclick="aplicarFiltros()">🔍 Aplicar</button>
+                <button class="btn btn-secondary" onclick="limparFiltros()">↺ Limpar</button>
+            </div>
+        </div>
+        <div class="search-box">
+            <input type="text" class="search-input" id="searchOcorrencias" placeholder="🔍 Buscar por código, local, equipamento, tipo...">
+        </div>
+        <div id="listaOcorrencias"><div class="loading"><div class="spinner"></div><p>Carregando...</p></div></div>
+    </div>
+</div>
+
+<!-- MODAL: VER + EDITAR + COMENTÁRIOS -->
+<div class="modal" id="modalForum">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalForumTitle">Detalhes da Ocorrência</h2>
+            <button class="modal-close" onclick="fecharModal()">×</button>
+        </div>
+
+        <div class="alert-inline" id="alertModal"></div>
+
+        <!-- Visualização -->
+        <div id="modalDetalhes"></div>
+
+        <!-- Edição (toggle) -->
+        <div id="editSection" style="display:none">
+            <div class="edit-section">
+                <div class="edit-section-title">✏️ Modo de Edição</div>
+                <div id="editFormContainer"></div>
+            </div>
+        </div>
+
+        <!-- Comentários -->
+        <div class="comments-section">
+            <div class="comments-header">
+                <h3>💬 Comentários</h3>
+                <span class="comments-count" id="commentsCount">0</span>
+            </div>
+            <div class="comment-form">
+                <textarea id="commentText" placeholder="Adicione um comentário, atualização ou observação..." maxlength="1000"></textarea>
+                <div id="commentImgsPreview" class="comment-images-preview"></div>
+                <div class="comment-form-footer">
+                    <label class="comment-attach-btn">📷 Anexar Fotos
+                        <input type="file" accept="image/*" multiple style="display:none" onchange="handleCommentImg(event)">
+                    </label>
+                    <button class="btn" onclick="enviarComentario()">Enviar Comentário</button>
+                </div>
+            </div>
+            <div class="comments-list" id="commentsList"><div class="loading"><div class="spinner"></div></div></div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="fecharModal()">Fechar</button>
+            <button class="btn btn-warning" id="btnToggleEdit" style="display:none" onclick="toggleEdit()">✏️ Editar</button>
+            <button class="btn btn-success"  id="btnSalvarEdit" style="display:none" onclick="salvarEdicao()">💾 Salvar Alterações</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: NOVA OCORRÊNCIA -->
+<div class="modal" id="modalNova">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalNovaTitle">Nova Ocorrência</h2>
+            <button class="modal-close" onclick="fecharModalNova()">×</button>
+        </div>
+        <div class="alert-inline" id="alertNova"></div>
+        <div id="novaFormContainer"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="fecharModalNova()">Cancelar</button>
+            <button class="btn" onclick="salvarNovaOcorrencia()">✅ Registrar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://wcfrwsgnxochxvwhxnvy.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZnJ3c2dueG9jaHh2d2h4bnZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MzExMDgsImV4cCI6MjA4MzIwNzEwOH0.Yb4cT5chXp3S8NZaWbLpv436HzxGCO7CZTruPpOPDdU';
+
+/* ── WhatsApp Helper ─────────────────────────────────────────── */
+const WA = (() => {
+    const _cache = {};
+    async function _buscarTel(nomeOuId) {
+        if (_cache[nomeOuId]) return _cache[nomeOuId];
+        try {
+            const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            const { data } = await sb.from('usuarios').select('nome,telefone')
+                .ilike('nome', nomeOuId).maybeSingle();
+            if (data?.telefone) _cache[nomeOuId] = data.telefone;
+            return data?.telefone || null;
+        } catch { return null; }
+    }
+    function _enviar(tel, msg) {
+        const n = tel.replace(/[^\d+]/g,'').replace(/^\+/,'');
+        window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+    async function notificar(nomeOuId, mensagem) {
+        if (!nomeOuId || !mensagem) return;
+        if (/^\+?\d{8,}$/.test(nomeOuId.replace(/[\s\-()+]/g,''))) { _enviar(nomeOuId, mensagem); return; }
+        const tel = await _buscarTel(nomeOuId);
+        if (tel) _enviar(tel, mensagem);
+    }
+    async function notificarMencoes(texto, contexto) {
+        const m = (texto.match(/@([\wÀ-ú\s]+?)(?=\s@|\s*$|[,.])/g)||[]).map(x=>x.replace('@','').trim());
+        for (const nome of m) await notificar(nome, `💬 Você foi mencionado!\n\n"${texto.substring(0,120)}"\n\n${contexto||''}`);
+    }
+    return { notificar, notificarMencoes };
+})();
+
+let db, currentUser;
+let allOcorrencias = [], filteredOcorrencias = [];
+let currentItemId = null, currentItemTipo = null, currentItemData = null;
+let commentImgs = [], editImgs = [], novaImgs = [];
+let editModeActive = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('currentUser');
+    if (!saved) { window.location.href = 'login.html'; return; }
+    currentUser = JSON.parse(saved);
+    document.getElementById('userName').textContent  = currentUser.nome || '';
+    document.getElementById('userBadge').textContent = currentUser.perfil || 'Usuário';
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    setupSidebar();
+    setupSearch();
+    document.getElementById('btnLogout').addEventListener('click', logout);
+    loadOcorrencias();
+    // Notificações
+    window.notifInit?.();
+    window.pushInit?.();
+});
+
+/* SIDEBAR */
+function setupSidebar() {
+    const btn=document.getElementById('hamburgerBtn'), sb=document.getElementById('sidebar'), ov=document.getElementById('sidebarOverlay');
+    btn.addEventListener('click',()=>{btn.classList.toggle('active');sb.classList.toggle('active');ov.classList.toggle('active');});
+    ov.addEventListener('click',closeSidebar);
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSidebar();fecharModal();fecharModalNova();}});
+}
+function closeSidebar(){
+    ['hamburgerBtn','sidebar','sidebarOverlay'].forEach(id=>document.getElementById(id).classList.remove('active'));
+}
+
+/* LOAD */
+async function loadOcorrencias() {
+    document.getElementById('listaOcorrencias').innerHTML='<div class="loading"><div class="spinner"></div><p>Carregando...</p></div>';
+    try {
+        const [rP,rE] = await Promise.all([
+            db.from('manutencao_predial').select('*').order('created_at',{ascending:false}),
+            db.from('manutencao_equipamentos').select('*').order('created_at',{ascending:false})
+        ]);
+        if(rP.error)throw rP.error; if(rE.error)throw rE.error;
+        const prediais=(rP.data||[]).map(i=>({...i,tipo_manutencao:'predial',titulo:i.local,subtitulo:i.tipo}));
+        const equips=(rE.data||[]).map(i=>({...i,tipo_manutencao:'equipamento',titulo:i.equipamento,subtitulo:i.tipo}));
+        allOcorrencias=[...prediais,...equips].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+        filteredOcorrencias=[...allOcorrencias];
+        calcStats(); popularFiltroUsuarios(); renderTabela(filteredOcorrencias);
+    } catch(e){document.getElementById('listaOcorrencias').innerHTML='<div class="loading">Erro ao carregar.</div>';}
+}
+
+function calcStats(){
+    document.getElementById('statTotal').textContent=allOcorrencias.length;
+    document.getElementById('statPendente').textContent=allOcorrencias.filter(i=>i.status==='pendente').length;
+    document.getElementById('statAndamento').textContent=allOcorrencias.filter(i=>i.status==='andamento').length;
+    document.getElementById('statConcluido').textContent=allOcorrencias.filter(i=>i.status==='concluido').length;
+    document.getElementById('statUrgente').textContent=allOcorrencias.filter(i=>i.prioridade==='urgente').length;
+}
+
+/* RENDER TABLE */
+function renderTabela(lista){
+    const el=document.getElementById('listaOcorrencias');
+    if(!lista.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">🔍</div><p>Nenhuma ocorrência encontrada.</p></div>';return;}
+    let html=`<div class="total-strip">📊 ${lista.length} ocorrência(s) encontrada(s)</div>
+    <div class="table-container"><table id="tabelaOcorrencias">
+    <thead><tr><th>Tipo</th><th>Código</th><th>Título</th><th>Categoria</th><th>Prioridade</th><th>Status</th><th>Criado por</th><th>Data</th><th>Ações</th></tr></thead><tbody>`;
+    lista.forEach(item=>{
+        const isPredial=item.tipo_manutencao==='predial';
+        const icon=isPredial?'🏢':'⚙️', label=isPredial?'Predial':'Equipamento';
+        const data=new Date(item.created_at).toLocaleDateString('pt-BR');
+        const priorBadge=item.prioridade?`<span class="badge badge-${item.prioridade}">${item.prioridade}</span>`:'<span class="badge badge-media">média</span>';
+        const canEdit=isPredial?hasPermission('perm_predial_editar'):hasPermission('perm_equipamentos_editar');
+        const notLocked=!item.bloqueado||currentUser.perfil==='admin';
+        const editBtn=canEdit&&notLocked?`<button class="btn btn-small btn-warning" onclick="abrirDetalhes(${item.id},'${item.tipo_manutencao}',true)">✏️ Editar</button>`:'';
+        html+=`<tr>
+            <td><div class="tipo-chip">${icon} <span style="font-size:11px;color:#666">${label}</span></div></td>
+            <td><span class="codigo-badge">${item.codigo}</span></td>
+            <td><strong>${item.titulo}</strong></td>
+            <td>${item.subtitulo}</td>
+            <td>${priorBadge}</td>
+            <td><span class="badge badge-${item.status}">${item.status}</span></td>
+            <td>${item.criado_por||'–'}</td>
+            <td style="white-space:nowrap">${data}</td>
+            <td><div class="action-buttons">
+                <button class="btn btn-small btn-secondary" onclick="abrirDetalhes(${item.id},'${item.tipo_manutencao}',false)">👁️ Ver</button>
+                ${editBtn}
+            </div></td>
+        </tr>`;
+    });
+    html+='</tbody></table></div>';
+    el.innerHTML=html;
+}
+
+/* SEARCH */
+function setupSearch(){
+    document.getElementById('searchOcorrencias').addEventListener('input',function(){
+        const term=this.value.toLowerCase().trim();
+        const tbody=document.querySelector('#tabelaOcorrencias tbody');
+        if(!tbody)return;
+        let v=0;
+        tbody.querySelectorAll('tr').forEach(row=>{
+            const m=row.textContent.toLowerCase().includes(term);
+            row.style.display=m?'':'none'; if(m)v++;
+        });
+        const strip=document.querySelector('.total-strip');
+        if(strip)strip.textContent=`📊 ${v} ocorrência(s) encontrada(s)`;
+    });
+}
+
+/* FILTERS */
+function popularFiltroUsuarios(){
+    const usu=[...new Set(allOcorrencias.map(i=>i.criado_por).filter(Boolean))].sort();
+    const sel=document.getElementById('filtroCriadoPor');
+    sel.innerHTML='<option value="">Todos</option>';
+    usu.forEach(u=>{const o=document.createElement('option');o.value=u;o.textContent=u;sel.appendChild(o);});
+}
+function aplicarFiltros(){
+    const tipo=document.getElementById('filtroTipo').value;
+    const status=document.getElementById('filtroStatus').value;
+    const prio=document.getElementById('filtroPrioridade').value;
+    const por=document.getElementById('filtroCriadoPor').value;
+    const ini=document.getElementById('filtroDataInicio').value;
+    const fim=document.getElementById('filtroDataFim').value;
+    filteredOcorrencias=allOcorrencias.filter(item=>{
+        if(tipo&&item.tipo_manutencao!==tipo)return false;
+        if(status&&item.status!==status)return false;
+        if(prio&&item.prioridade!==prio)return false;
+        if(por&&item.criado_por!==por)return false;
+        if(ini&&new Date(item.created_at)<new Date(ini))return false;
+        if(fim){const f=new Date(fim);f.setHours(23,59,59,999);if(new Date(item.created_at)>f)return false;}
+        return true;
+    });
+    renderTabela(filteredOcorrencias);
+    document.getElementById('searchOcorrencias').value='';
+}
+function limparFiltros(){
+    ['filtroTipo','filtroStatus','filtroPrioridade','filtroCriadoPor','filtroDataInicio','filtroDataFim'].forEach(id=>document.getElementById(id).value='');
+    filteredOcorrencias=[...allOcorrencias];
+    renderTabela(filteredOcorrencias);
+    document.getElementById('searchOcorrencias').value='';
+}
+
+/* ABRIR DETALHES */
+async function abrirDetalhes(id, tipo, openEditing=false){
+    currentItemId=id; currentItemTipo=tipo; commentImgs=[]; editImgs=[]; editModeActive=false;
+    const tabela=tipo==='predial'?'manutencao_predial':'manutencao_equipamentos';
+    try {
+        const {data,error}=await db.from(tabela).select('*').eq('id',id).single();
+        if(error)throw error;
+        currentItemData=data;
+        document.getElementById('modalForumTitle').textContent=tipo==='predial'?'🏢 Manutenção Predial':'⚙️ Manutenção de Equipamento';
+        renderDetalhes(data,tipo);
+        clearAlert('alertModal');
+        // Esconder edição
+        document.getElementById('editSection').style.display='none';
+        document.getElementById('btnSalvarEdit').style.display='none';
+        document.getElementById('btnToggleEdit').textContent='✏️ Editar';
+
+        const canEdit=tipo==='predial'?hasPermission('perm_predial_editar'):hasPermission('perm_equipamentos_editar');
+        const isLocked=data.bloqueado&&currentUser.perfil!=='admin';
+        document.getElementById('btnToggleEdit').style.display=(canEdit&&!isLocked)?'inline-flex':'none';
+
+        document.getElementById('modalForum').classList.add('active');
+        await carregarComentarios();
+
+        // Se clicou em Editar direto — abre o form automaticamente
+        if(openEditing&&canEdit&&!isLocked){
+            toggleEdit();
+        }
+    } catch(err){alert('Erro ao abrir: '+err.message);}
+}
+
+function renderDetalhes(data,tipo){
+    const isBloqueado=data.bloqueado||data.status==='concluido';
+    const isAdmin=currentUser.perfil==='admin';
+    let html=`<div class="detail-grid">
+        <div class="detail-item"><strong>Código</strong><span class="codigo-badge">${data.codigo}</span></div>
+        <div class="detail-item"><strong>Status</strong><span class="badge badge-${data.status}">${data.status}</span></div>`;
+    if(tipo==='predial'){
+        html+=`<div class="detail-item"><strong>Local</strong><span>${data.local}</span></div>
+        <div class="detail-item"><strong>Tipo</strong><span>${data.tipo}</span></div>
+        <div class="detail-item"><strong>Prioridade</strong><span class="badge badge-${data.prioridade||'media'}">${data.prioridade||'–'}</span></div>
+        <div class="detail-item"><strong>Data Prevista</strong><span>${data.data_prevista?new Date(data.data_prevista).toLocaleDateString('pt-BR'):'–'}</span></div>
+        <div class="detail-item"><strong>Criado por</strong><span>${data.criado_por||'–'}</span></div>`;
+    } else {
+        html+=`<div class="detail-item"><strong>Equipamento</strong><span>${data.equipamento}</span></div>
+        <div class="detail-item"><strong>Patrimônio</strong><span>${data.patrimonio||'–'}</span></div>
+        <div class="detail-item"><strong>Tipo</strong><span>${data.tipo}</span></div>
+        <div class="detail-item"><strong>Responsável</strong><span>${data.responsavel||'–'}</span></div>
+        <div class="detail-item"><strong>Criado por</strong><span>${data.criado_por||'–'}</span></div>`;
+    }
+    html+=`</div>`;
+    const desc=tipo==='predial'?data.descricao:data.observacoes;
+    html+=`<p style="font-weight:600;margin:16px 0 6px">Descrição / Observações</p><div class="desc-box">${desc||'–'}</div>`;
+    if(data.observacoes_conclusao) html+=`<p style="font-weight:600;margin:16px 0 6px">Observações de Conclusão</p><div class="desc-box">${data.observacoes_conclusao}</div>`;
+    if(data.imagens&&data.imagens.length) html+=`<p style="font-weight:600;margin:16px 0 8px">Imagens</p><div class="image-grid">${data.imagens.map(img=>`<img src="${img}" onclick="zoomImg('${img}')">`).join('')}</div>`;
+    if(isBloqueado&&!isAdmin) html+=`<div class="locked-msg">🔒 <strong>Manutenção concluída.</strong> Apenas comentários são permitidos.</div>`;
+    else if(isBloqueado&&isAdmin) html+=`<div class="locked-msg">🔒 <strong>Bloqueada.</strong><button class="unlock-btn" onclick="desbloquear(${data.id},'${tipo}')">Desbloquear</button></div>`;
+    document.getElementById('modalDetalhes').innerHTML=html;
+}
+
+/* TOGGLE EDIT */
+function toggleEdit(){
+    editModeActive=!editModeActive;
+    const editSec=document.getElementById('editSection');
+    const btnT=document.getElementById('btnToggleEdit');
+    const btnS=document.getElementById('btnSalvarEdit');
+    if(editModeActive){
+        editImgs=currentItemData.imagens?[...currentItemData.imagens]:[];
+        renderEditForm(currentItemData,currentItemTipo);
+        editSec.style.display='block';
+        btnT.textContent='👁️ Cancelar Edição';
+        btnS.style.display='inline-flex';
+        editSec.scrollIntoView({behavior:'smooth',block:'start'});
+    } else {
+        editSec.style.display='none';
+        btnT.textContent='✏️ Editar';
+        btnS.style.display='none';
+    }
+}
+
+function renderEditForm(data,tipo){
+    let html='';
+    if(tipo==='predial'){
+        html=`<div class="edit-grid">
+            <div class="edit-group"><label>Local *</label><input type="text" id="ef_local" value="${esc(data.local||'')}"></div>
+            <div class="edit-group"><label>Tipo *</label><select id="ef_tipo">${['eletrica','hidraulica','pintura','estrutural','limpeza','outros'].map(t=>`<option value="${t}"${data.tipo===t?' selected':''}>${t}</option>`).join('')}</select></div>
+            <div class="edit-group"><label>Prioridade *</label><select id="ef_prioridade">${['baixa','media','alta','urgente'].map(p=>`<option value="${p}"${data.prioridade===p?' selected':''}>${p}</option>`).join('')}</select></div>
+            <div class="edit-group"><label>Status *</label><select id="ef_status">${['pendente','andamento','concluido','cancelado'].map(s=>`<option value="${s}"${data.status===s?' selected':''}>${s}</option>`).join('')}</select></div>
+            <div class="edit-group"><label>Data Prevista</label><input type="date" id="ef_data_prevista" value="${data.data_prevista||''}"></div>
+            <div class="edit-group"><label>Data Conclusão</label><input type="date" id="ef_data_conclusao" value="${data.data_conclusao||''}"></div>
+        </div>
+        <div class="edit-group"><label>Descrição *</label><textarea id="ef_descricao">${esc(data.descricao||'')}</textarea></div>
+        <div class="edit-group"><label>Obs. de Conclusão</label><textarea id="ef_obs_conclusao">${esc(data.observacoes_conclusao||'')}</textarea></div>`;
+    } else {
+        html=`<div class="edit-grid">
+            <div class="edit-group"><label>Equipamento *</label><input type="text" id="ef_equipamento" value="${esc(data.equipamento||'')}"></div>
+            <div class="edit-group"><label>Patrimônio</label><input type="text" id="ef_patrimonio" value="${esc(data.patrimonio||'')}"></div>
+            <div class="edit-group"><label>Tipo *</label><select id="ef_tipo">${['preventiva','corretiva','preditiva'].map(t=>`<option value="${t}"${data.tipo===t?' selected':''}>${t}</option>`).join('')}</select></div>
+            <div class="edit-group"><label>Status *</label><select id="ef_status">${['pendente','andamento','concluido','cancelado'].map(s=>`<option value="${s}"${data.status===s?' selected':''}>${s}</option>`).join('')}</select></div>
+            <div class="edit-group"><label>Data Manutenção</label><input type="date" id="ef_data_manutencao" value="${data.data_manutencao||''}"></div>
+            <div class="edit-group"><label>Responsável</label><input type="text" id="ef_responsavel" value="${esc(data.responsavel||'')}"></div>
+            <div class="edit-group"><label>Data Conclusão</label><input type="date" id="ef_data_conclusao" value="${data.data_conclusao||''}"></div>
+        </div>
+        <div class="edit-group"><label>Observações *</label><textarea id="ef_observacoes">${esc(data.observacoes||'')}</textarea></div>
+        <div class="edit-group"><label>Obs. de Conclusão</label><textarea id="ef_obs_conclusao">${esc(data.observacoes_conclusao||'')}</textarea></div>`;
+    }
+    html+=`<div class="edit-group"><label>Imagens</label>
+        <label class="img-upload-label">📷 Adicionar imagens<input type="file" accept="image/*" multiple style="display:none" onchange="handleEditImg(event)"></label>
+        <div class="img-preview-grid" id="editImgsPreview"></div>
+    </div>`;
+    document.getElementById('editFormContainer').innerHTML=html;
+    renderEditImgs();
+}
+function handleEditImg(ev){
+    Array.from(ev.target.files).forEach(f=>{if(!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=e=>{editImgs.push(e.target.result);renderEditImgs();};r.readAsDataURL(f);});
+    ev.target.value='';
+}
+function renderEditImgs(){
+    const el=document.getElementById('editImgsPreview');
+    if(!el)return;
+    el.innerHTML=editImgs.map((img,i)=>`<div class="img-preview-item"><img src="${img}"><button class="img-remove" onclick="removeEditImg(${i})">×</button></div>`).join('');
+}
+function removeEditImg(i){editImgs.splice(i,1);renderEditImgs();}
+
+/* SALVAR EDIÇÃO */
+async function salvarEdicao(){
+    const tipo=currentItemTipo;
+    const tabela=tipo==='predial'?'manutencao_predial':'manutencao_equipamentos';
+    try {
+        let payload={imagens:editImgs};
+        const status=document.getElementById('ef_status').value;
+        if(tipo==='predial'){
+            payload={...payload,
+                local:document.getElementById('ef_local').value.trim(),
+                tipo:document.getElementById('ef_tipo').value,
+                prioridade:document.getElementById('ef_prioridade').value,
+                status,
+                data_prevista:document.getElementById('ef_data_prevista').value||null,
+                data_conclusao:document.getElementById('ef_data_conclusao').value||null,
+                descricao:document.getElementById('ef_descricao').value.trim(),
+                observacoes_conclusao:document.getElementById('ef_obs_conclusao').value.trim()
+            };
+        } else {
+            payload={...payload,
+                equipamento:document.getElementById('ef_equipamento').value.trim(),
+                patrimonio:document.getElementById('ef_patrimonio').value.trim(),
+                tipo:document.getElementById('ef_tipo').value,
+                status,
+                data_manutencao:document.getElementById('ef_data_manutencao').value||null,
+                data_conclusao:document.getElementById('ef_data_conclusao').value||null,
+                responsavel:document.getElementById('ef_responsavel').value.trim(),
+                observacoes:document.getElementById('ef_observacoes').value.trim(),
+                observacoes_conclusao:document.getElementById('ef_obs_conclusao').value.trim()
+            };
+        }
+        if(status==='concluido'){
+            payload.bloqueado=true;
+            payload.concluido_por=currentUser.nome;
+            if(!payload.data_conclusao)payload.data_conclusao=new Date().toISOString().split('T')[0];
+        }
+        const{error}=await db.from(tabela).update(payload).eq('id',currentItemId);
+        if(error)throw error;
+        showAlert('alertModal','✅ Salvo com sucesso!','success');
+        const{data}=await db.from(tabela).select('*').eq('id',currentItemId).single();
+        currentItemData=data;
+        renderDetalhes(data,tipo);
+        // Fechar edição
+        editModeActive=false;
+        document.getElementById('editSection').style.display='none';
+        document.getElementById('btnToggleEdit').textContent='✏️ Editar';
+        document.getElementById('btnSalvarEdit').style.display='none';
+        loadOcorrencias();
+        // Notificações WhatsApp
+        const codigo = data.codigo || '';
+        if (tipo !== 'predial') {
+            const novoResp = payload.responsavel;
+            const antigoResp = currentItemData?.responsavel;
+            if (novoResp && novoResp !== antigoResp) {
+                await WA.notificar(novoResp, `🔧 Você foi designado como responsável!\n\nOcorrência: ${codigo}\nEquipamento: ${data.equipamento||''}\nStatus: ${payload.status}\n\nAcesse o sistema para mais detalhes.`);
+            }
+        }
+        if (payload.status === 'concluido' && data.criado_por && data.criado_por !== currentUser.nome) {
+            await WA.notificar(data.criado_por, `✅ Ocorrência ${codigo} foi concluída por ${currentUser.nome}.`);
+        }
+    } catch(err){showAlert('alertModal','❌ Erro: '+err.message,'error');}
+}
+
+/* NOVA OCORRÊNCIA */
+function abrirNovaOcorrencia(tipo){
+    novaImgs=[];
+    const isPredial=tipo==='predial';
+    document.getElementById('modalNovaTitle').textContent=isPredial?'🏢 Nova Manutenção Predial':'⚙️ Nova Manutenção de Equipamento';
+    const hoje=new Date().toISOString().split('T')[0];
+    let html=`<input type="hidden" id="nv_tipo" value="${tipo}">`;
+    if(isPredial){
+        html+=`<div class="edit-grid">
+            <div class="edit-group"><label>Local *</label><input type="text" id="nv_local" placeholder="Ex: Sala 101"></div>
+            <div class="edit-group"><label>Tipo *</label><select id="nv_tipo_m"><option value="">Selecione...</option>${['eletrica','hidraulica','pintura','estrutural','limpeza','outros'].map(t=>`<option value="${t}">${t}</option>`).join('')}</select></div>
+            <div class="edit-group"><label>Prioridade *</label><select id="nv_prioridade"><option value="">Selecione...</option>${['baixa','media','alta','urgente'].map(p=>`<option value="${p}">${p}</option>`).join('')}</select></div>
+            <div class="edit-group"><label>Data Prevista *</label><input type="date" id="nv_data" value="${hoje}"></div>
+        </div>
+        <div class="edit-group"><label>Descrição *</label><textarea id="nv_descricao" placeholder="Descreva o problema..."></textarea></div>`;
+    } else {
+        html+=`<div class="edit-grid">
+            <div class="edit-group"><label>Equipamento *</label><input type="text" id="nv_equipamento" placeholder="Nome do equipamento"></div>
+            <div class="edit-group"><label>Patrimônio</label><input type="text" id="nv_patrimonio" placeholder="Número de patrimônio"></div>
+            <div class="edit-group"><label>Tipo *</label><select id="nv_tipo_m"><option value="">Selecione...</option>${['preventiva','corretiva','preditiva'].map(t=>`<option value="${t}">${t}</option>`).join('')}</select></div>
+            <div class="edit-group"><label>Status *</label><select id="nv_status">${['pendente','andamento'].map(s=>`<option value="${s}">${s}</option>`).join('')}</select></div>
+            <div class="edit-group"><label>Data *</label><input type="date" id="nv_data" value="${hoje}"></div>
+            <div class="edit-group"><label>Responsável</label><input type="text" id="nv_responsavel" placeholder="Nome do técnico"></div>
+        </div>
+        <div class="edit-group"><label>Observações *</label><textarea id="nv_observacoes" placeholder="Descreva o serviço..."></textarea></div>`;
+    }
+    html+=`<div class="edit-group"><label>Imagens</label>
+        <label class="img-upload-label">📷 Adicionar imagens<input type="file" accept="image/*" multiple style="display:none" onchange="handleNovaImg(event)"></label>
+        <div class="img-preview-grid" id="novaImgsPreview"></div>
+    </div>`;
+    document.getElementById('novaFormContainer').innerHTML=html;
+    clearAlert('alertNova');
+    document.getElementById('modalNova').classList.add('active');
+}
+function handleNovaImg(ev){
+    Array.from(ev.target.files).forEach(f=>{if(!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=e=>{novaImgs.push(e.target.result);renderNovaImgs();};r.readAsDataURL(f);});
+    ev.target.value='';
+}
+function renderNovaImgs(){
+    const el=document.getElementById('novaImgsPreview');
+    if(!el)return;
+    el.innerHTML=novaImgs.map((img,i)=>`<div class="img-preview-item"><img src="${img}"><button class="img-remove" onclick="removeNovaImg(${i})">×</button></div>`).join('');
+}
+function removeNovaImg(i){novaImgs.splice(i,1);renderNovaImgs();}
+
+async function salvarNovaOcorrencia(){
+    const tipo=document.getElementById('nv_tipo')?.value;
+    if(!tipo)return;
+    const isPredial=tipo==='predial';
+    const tabela=isPredial?'manutencao_predial':'manutencao_equipamentos';
+    const canCreate=isPredial?hasPermission('perm_predial_criar'):hasPermission('perm_equipamentos_criar');
+    if(!canCreate){showAlert('alertNova','❌ Sem permissão!','error');return;}
+    try {
+        const codigo=gerarCodigo(isPredial?'MP':'ME');
+        let payload={imagens:novaImgs,criado_por:currentUser.nome,codigo};
+        if(isPredial){
+            const local=document.getElementById('nv_local').value.trim();
+            const tipo_m=document.getElementById('nv_tipo_m').value;
+            const prio=document.getElementById('nv_prioridade').value;
+            const data=document.getElementById('nv_data').value;
+            const desc=document.getElementById('nv_descricao').value.trim();
+            if(!local||!tipo_m||!prio||!data||!desc){showAlert('alertNova','❌ Preencha todos os campos!','error');return;}
+            payload={...payload,local,tipo:tipo_m,prioridade:prio,data_prevista:data,descricao:desc,status:'pendente'};
+        } else {
+            const equip=document.getElementById('nv_equipamento').value.trim();
+            const patri=document.getElementById('nv_patrimonio').value.trim();
+            const tipo_m=document.getElementById('nv_tipo_m').value;
+            const status=document.getElementById('nv_status').value;
+            const data=document.getElementById('nv_data').value;
+            const resp=document.getElementById('nv_responsavel').value.trim();
+            const obs=document.getElementById('nv_observacoes').value.trim();
+            if(!equip||!tipo_m||!data||!obs){showAlert('alertNova','❌ Preencha todos os campos obrigatórios!','error');return;}
+            payload={...payload,equipamento:equip,patrimonio:patri,tipo:tipo_m,status,data_manutencao:data,responsavel:resp,observacoes:obs};
+        }
+        const{error}=await db.from(tabela).insert([payload]);
+        if(error)throw error;
+        showAlert('alertNova','✅ Registrado com sucesso!','success');
+        // Notificar responsável se equipamento
+        if (!isPredial && payload.responsavel) {
+            await WA.notificar(payload.responsavel, `🔧 Nova ocorrência atribuída a você!\n\nCódigo: ${payload.codigo}\nEquipamento: ${payload.equipamento||''}\nTipo: ${payload.tipo||''}\n\nAcesse o sistema para mais detalhes.`);
+        }
+        setTimeout(()=>{fecharModalNova();loadOcorrencias();},1400);
+    } catch(err){showAlert('alertNova','❌ Erro: '+err.message,'error');}
+}
+function fecharModalNova(){document.getElementById('modalNova').classList.remove('active');}
+
+/* DESBLOQUEAR */
+async function desbloquear(id,tipo){
+    if(!confirm('Desbloquear para edição?'))return;
+    const tabela=tipo==='predial'?'manutencao_predial':'manutencao_equipamentos';
+    try {
+        const{error}=await db.from(tabela).update({bloqueado:false,status:'andamento'}).eq('id',id);
+        if(error)throw error;
+        showAlert('alertModal','✅ Desbloqueado!','success');
+        const{data}=await db.from(tabela).select('*').eq('id',id).single();
+        currentItemData=data; renderDetalhes(data,tipo);
+        document.getElementById('btnToggleEdit').style.display='inline-flex';
+        loadOcorrencias();
+    } catch(err){showAlert('alertModal','❌ Erro: '+err.message,'error');}
+}
+
+/* COMENTÁRIOS */
+async function carregarComentarios(){
+    document.getElementById('commentsList').innerHTML='<div class="loading"><div class="spinner"></div></div>';
+    const tabela=currentItemTipo==='predial'?'comentarios_predial':'comentarios_equipamentos';
+    try {
+        const{data,error}=await db.from(tabela).select('*').eq('manutencao_id',currentItemId).order('created_at',{ascending:true});
+        if(error)throw error;
+        document.getElementById('commentsCount').textContent=data.length;
+        if(!data.length){document.getElementById('commentsList').innerHTML='<div class="no-comments">💬 Seja o primeiro a comentar!</div>';return;}
+        document.getElementById('commentsList').innerHTML=data.map(c=>{
+            const ini=c.usuario_nome.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+            const dt=formatarData(c.created_at);
+            const imgs=c.imagens&&c.imagens.length?`<div class="comment-imgs">${c.imagens.map(i=>`<img src="${i}" onclick="zoomImg('${i}')">`).join('')}</div>`:'';
+            return `<div class="comment-item"><div class="comment-header"><div class="comment-author"><div class="comment-avatar">${ini}</div><div><div class="comment-author-name">${c.usuario_nome}</div><div class="comment-date">${dt}</div></div></div></div><div class="comment-text">${c.comentario}</div>${imgs}</div>`;
+        }).join('');
+    } catch(err){document.getElementById('commentsList').innerHTML='<div class="no-comments">Erro ao carregar comentários.</div>';}
+}
+async function enviarComentario(){
+    const texto=document.getElementById('commentText').value.trim();
+    if(!texto){alert('Digite um comentário!');return;}
+    const tabela=currentItemTipo==='predial'?'comentarios_predial':'comentarios_equipamentos';
+    try {
+        const{error}=await db.from(tabela).insert([{manutencao_id:currentItemId,usuario_nome:currentUser.nome,usuario_id:currentUser.id,comentario:texto,imagens:commentImgs}]);
+        if(error)throw error;
+        document.getElementById('commentText').value='';
+        commentImgs=[]; document.getElementById('commentImgsPreview').innerHTML='';
+        await carregarComentarios();
+        // Notificar @menções e criador da ocorrência
+        const codigo = currentItemData?.codigo || '';
+        await WA.notificarMencoes(texto, `Ocorrência: ${codigo}\nAcesse o sistema para responder.`);
+        if (currentItemData?.criado_por && currentItemData.criado_por !== currentUser.nome) {
+            await WA.notificar(currentItemData.criado_por, `💬 ${currentUser.nome} comentou na ocorrência ${codigo}:\n"${texto.substring(0,100)}"`);
+        }
+    } catch(err){alert('Erro: '+err.message);}
+}
+function handleCommentImg(ev){
+    Array.from(ev.target.files).forEach(f=>{if(!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=e=>{commentImgs.push(e.target.result);renderCommentImgs();};r.readAsDataURL(f);});
+    ev.target.value='';
+}
+function renderCommentImgs(){
+    document.getElementById('commentImgsPreview').innerHTML=commentImgs.map((img,i)=>`<div class="comment-image-item"><img src="${img}"><button class="comment-image-remove" onclick="removeCommentImg(${i})">×</button></div>`).join('');
+}
+function removeCommentImg(i){commentImgs.splice(i,1);renderCommentImgs();}
+
+/* UTILS */
+function fecharModal(){
+    document.getElementById('modalForum').classList.remove('active');
+    currentItemId=null;currentItemTipo=null;currentItemData=null;
+    commentImgs=[];editImgs=[];editModeActive=false;
+    document.getElementById('editSection').style.display='none';
+    document.getElementById('btnToggleEdit').textContent='✏️ Editar';
+    document.getElementById('btnSalvarEdit').style.display='none';
+}
+document.getElementById('modalForum').addEventListener('click',e=>{if(e.target===document.getElementById('modalForum'))fecharModal();});
+document.getElementById('modalNova').addEventListener('click',e=>{if(e.target===document.getElementById('modalNova'))fecharModalNova();});
+
+function zoomImg(src){
+    const m=document.createElement('div');
+    m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:20px';
+    m.innerHTML=`<img src="${src}" style="max-width:100%;max-height:90vh;border-radius:12px;object-fit:contain;">`;
+    m.onclick=()=>m.remove(); document.body.appendChild(m);
+}
+function hasPermission(perm){if(!currentUser)return false;if(currentUser.perfil==='admin')return true;return currentUser[perm]===true;}
+function logout(){if(confirm('Deseja realmente sair?')){localStorage.removeItem('currentUser');window.location.href='login.html';}}
+function formatarData(str){
+    const d=new Date(str),agora=new Date(),diff=agora-d,min=Math.floor(diff/60000),h=Math.floor(min/60),dias=Math.floor(h/24);
+    if(min<1)return'Agora mesmo';if(min<60)return`${min} min atrás`;if(h<24)return`${h}h atrás`;if(dias<7)return`${dias}d atrás`;
+    return d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+function gerarCodigo(prefix){const d=new Date().toISOString().split('T')[0].replace(/-/g,'');const r=Math.floor(Math.random()*10000).toString().padStart(4,'0');return`${prefix}-${d}-${r}`;}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function showAlert(id,msg,tipo){const el=document.getElementById(id);el.className=`alert-inline ${tipo} show`;el.textContent=msg;if(tipo==='success')setTimeout(()=>el.classList.remove('show'),4000);}
+function clearAlert(id){const el=document.getElementById(id);el.className='alert-inline';el.textContent='';}
+</script>
+    <script src="notifications.js"></script>
+    <script src="push.js"></script>
+</body>
+</html>

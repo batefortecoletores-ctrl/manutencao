@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Check-lists - Sistema de Manutenção</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/checklist-painel.css">
+
+    <meta name="theme-color" content="#1e293b">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+    <script src="notifications.js"></script>
+    <script src="push.js"></script>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="header-left">
+        <button class="hamburger-btn" id="hamburgerBtn">
+            <span class="hamburger-line"></span><span class="hamburger-line"></span><span class="hamburger-line"></span>
+        </button>
+        <h1>✅ Painel de Check-lists</h1>
+    </div>
+    <div class="user-info">
+        <span class="user-name" id="userName"></span>
+        <span class="user-badge" id="userBadge">Usuário</span>
+        <button class="btn-logout" id="btnLogout">Sair</button>
+    </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header"><h2>Menu de Navegação</h2><p>Selecione uma opção abaixo</p></div>
+    <div class="menu-section">
+        <div class="menu-section-title">Principal</div>
+        <div class="menu-item active" onclick="closeSidebar()"><span class="menu-icon">✅</span><span>Painel Check-lists</span></div>
+    </div>
+        <div class="menu-section">
+            <div class="menu-section-title">Operação</div>
+            <a href="ocorrencias.html" style="text-decoration:none;">
+                <div class="menu-item" id="menuOcorrenciasExt">
+                    <span class="menu-icon">📋</span>
+                    <span>Central de Ocorrências</span>
+                </div>
+            </a>
+            <div class="menu-section-title">Manutenção</div>
+            <div class="menu-item" id="menuPredial">
+                <span class="menu-icon">🏢</span>
+                <span>Predial</span>
+            </div>
+            <div class="menu-item" id="menuEquipamentos">
+                <span class="menu-icon">⚙️</span>
+                <span>Equipamentos</span>
+            </div>
+            <div class="menu-item" id="menuOcorrencias">
+                <span class="menu-icon">📋</span>
+                <span>Ocorrências</span>
+            </div>
+        </div>
+        <a href="checklist-painel.html" class="menu-item"><span class="menu-icon">✅</span><span>Painel Check-lists</span></a>
+        <a href="checklist.html" class="menu-item"><span class="menu-icon">📝</span><span>Novo Check-list</span></a>
+
+        <div class="menu-section">
+            <div class="menu-section-title">Gestão</div>
+            <a href="usuarios.html" class="menu-item" id="menuUsuarios">
+                <span class="menu-icon">👥</span>
+                <span>Usuários</span>
+            </a>
+        </div>
+
+</div>
+
+<!-- MAIN -->
+<div class="main-container">
+
+    <div class="hero-strip">
+        <div>
+            <h2>✅ Painel de Check-lists</h2>
+            <p>Histórico completo de inspeções diárias de empilhadeiras</p>
+        </div>
+        <div class="hero-actions">
+            <a href="checklist.html" class="btn-hero">📝 Novo Check-list</a>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+        <div class="stat-card"><div class="stat-number" id="statTotal">–</div><div class="stat-label">Total</div></div>
+        <div class="stat-card ok"><div class="stat-number" id="statOk">–</div><div class="stat-label">Sem Problemas</div></div>
+        <div class="stat-card problemas"><div class="stat-number" id="statProblemas">–</div><div class="stat-label">Com Problemas</div></div>
+        <div class="stat-card turno-a"><div class="stat-number" id="statTurnoA">–</div><div class="stat-label">Turno A</div></div>
+        <div class="stat-card turno-b"><div class="stat-number" id="statTurnoB">–</div><div class="stat-label">Turno B/C</div></div>
+    </div>
+
+    <div class="card">
+        <!-- FILTROS -->
+        <div class="filters-section">
+            <h3>🔍 Filtros</h3>
+            <div class="form-grid">
+                <div class="form-group"><label>Turno</label>
+                    <select id="filtroTurno"><option value="">Todos</option><option value="A"> A </option><option value="B"> B </option><option value="C"> C </option></select>
+                </div>
+                <div class="form-group"><label>Situação</label>
+                    <select id="filtroSituacao"><option value="">Todas</option><option value="ok">Sem Problemas</option><option value="problemas">Com Problemas</option></select>
+                </div>
+                <div class="form-group"><label>Operador</label>
+                    <select id="filtroOperador"><option value="">Todos</option></select>
+                </div>
+                <div class="form-group"><label>Data inicial</label><input type="date" id="filtroDataInicio"></div>
+                <div class="form-group"><label>Data final</label><input type="date" id="filtroDataFim"></div>
+            </div>
+            <div class="filter-actions">
+                <button class="btn" onclick="aplicarFiltros()">🔍 Aplicar</button>
+                <button class="btn btn-secondary" onclick="limparFiltros()">↺ Limpar</button>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <input type="text" class="search-input" id="searchChecklist" placeholder="🔍 Buscar por operador, matrícula, turno...">
+        </div>
+
+        <div id="listaChecklists"><div class="loading"><div class="spinner"></div><p>Carregando check-lists...</p></div></div>
+    </div>
+</div>
+
+<!-- MODAL DETALHES -->
+<div class="modal" id="modalDetalhes">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">📋 Detalhes do Check-list</h2>
+            <button class="modal-close" onclick="fecharModal()">×</button>
+        </div>
+        <div id="modalConteudo"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="fecharModal()">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://wcfrwsgnxochxvwhxnvy.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZnJ3c2dueG9jaHh2d2h4bnZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MzExMDgsImV4cCI6MjA4MzIwNzEwOH0.Yb4cT5chXp3S8NZaWbLpv436HzxGCO7CZTruPpOPDdU';
+
+let db, currentUser;
+let allChecklists = [], filteredChecklists = [];
+
+const PERGUNTAS = {
+    q1:'Há vazamentos visíveis de água ou óleo?',
+    q2:'A cabine está limpa e sem acúmulo de sujeira ou óleo?',
+    q3:'A corrente da torre possui folgas ou ruídos anormais?',
+    q4:'Há ruídos anormais durante o funcionamento da máquina?',
+    q5:'A estrutura da torre, mastro e garfos apresenta rachaduras, empenos ou soldas quebradas?',
+    q6:'A bateria possui carga o suficiente?',
+    q7:'A bateria está com o nível de água normal?',
+    q8:'Os cabos e terminais da bateria estão limpos e firmes?',
+    q9:'O sinal sonoro (buzina) funciona corretamente?',
+    q10:'As luzes estão funcionando?',
+    q11:'O alarme de ré funciona?',
+    q12:'O sistema de elevação e inclinação está funcionando normalmente?',
+    q13:'Há vazamentos no chão, mangueiras ou cilindros?',
+    q14:'As rodas estão firmes e seguras?',
+    q15:'As rodas estão boas? (sem cortes, desgastadas ou danificadas)',
+    q16:'O freio de serviço está eficiente?',
+    q17:'O freio de estacionamento funciona normalmente?',
+    q18:'A direção está leve e sem folgas?'
+};
+
+// Resposta "Sim" é problema para estas chaves
+const PROBLEMA_SIM = ['q1','q3','q4','q5','q13'];
+// Resposta "Não" é problema para estas chaves
+const PROBLEMA_NAO = ['q2','q6','q7','q8','q9','q10','q11','q12','q14','q15','q16','q17','q18'];
+
+function isProblema(key, val) {
+    if (PROBLEMA_SIM.includes(key) && val === 'Sim') return true;
+    if (PROBLEMA_NAO.includes(key) && val === 'Não') return true;
+    return false;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('currentUser');
+    if (!saved) { window.location.href = 'login.html'; return; }
+    currentUser = JSON.parse(saved);
+    document.getElementById('userName').textContent  = currentUser.nome || '';
+    document.getElementById('userBadge').textContent = currentUser.perfil || 'Usuário';
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    setupSidebar();
+    setupSearch();
+    document.getElementById('btnLogout').addEventListener('click', logout);
+    loadChecklists();
+});
+
+/* SIDEBAR */
+function setupSidebar() {
+    const btn=document.getElementById('hamburgerBtn'),sb=document.getElementById('sidebar'),ov=document.getElementById('sidebarOverlay');
+    btn.addEventListener('click',()=>{btn.classList.toggle('active');sb.classList.toggle('active');ov.classList.toggle('active');});
+    ov.addEventListener('click', closeSidebar);
+    document.addEventListener('keydown', e => { if(e.key==='Escape'){closeSidebar();fecharModal();}});
+}
+function closeSidebar(){['hamburgerBtn','sidebar','sidebarOverlay'].forEach(id=>document.getElementById(id).classList.remove('active'));}
+
+/* LOAD */
+async function loadChecklists() {
+    document.getElementById('listaChecklists').innerHTML='<div class="loading"><div class="spinner"></div><p>Carregando...</p></div>';
+    try {
+        // Try Supabase first
+        const {data, error} = await db.from('checklist_diario').select('*').order('created_at',{ascending:false}).limit(200);
+        if (error) throw error;
+        allChecklists = data || [];
+    } catch(e) {
+        // Fallback to localStorage
+        allChecklists = JSON.parse(localStorage.getItem('checklists') || '[]');
+    }
+    filteredChecklists = [...allChecklists];
+    calcStats();
+    popularFiltroOperadores();
+    renderTabela(filteredChecklists);
+}
+
+function calcStats() {
+    const total = allChecklists.length;
+    const comProblemas = allChecklists.filter(i => (i.total_problemas || 0) > 0).length;
+    const semProblemas = total - comProblemas;
+    const turnoA = allChecklists.filter(i => i.turno === 'A').length;
+    const turnoBC = allChecklists.filter(i => i.turno === 'B' || i.turno === 'C').length;
+    document.getElementById('statTotal').textContent    = total;
+    document.getElementById('statOk').textContent       = semProblemas;
+    document.getElementById('statProblemas').textContent = comProblemas;
+    document.getElementById('statTurnoA').textContent   = turnoA;
+    document.getElementById('statTurnoB').textContent   = turnoBC;
+}
+
+function popularFiltroOperadores() {
+    const ops = [...new Set(allChecklists.map(i=>i.operador).filter(Boolean))].sort();
+    const sel = document.getElementById('filtroOperador');
+    sel.innerHTML='<option value="">Todos</option>';
+    ops.forEach(o=>{const opt=document.createElement('option');opt.value=o;opt.textContent=o;sel.appendChild(opt);});
+}
+
+/* RENDER TABLE */
+function renderTabela(lista) {
+    const el = document.getElementById('listaChecklists');
+    if (!lista.length) {
+        el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><p>Nenhum check-list encontrado.</p></div>';
+        return;
+    }
+
+    let html=`<div class="total-strip">📊 ${lista.length} check-list(s) encontrado(s)</div>
+    <div class="table-container"><table id="tabelaChecklists">
+    <thead><tr>
+        <th>Data/Hora</th><th>Operador</th><th>Matrícula</th><th>Turno</th><th>Horímetro</th><th>Situação</th><th>Problemas</th><th>Ações</th>
+    </tr></thead><tbody>`;
+
+    lista.forEach(item=>{
+        const dt = new Date(item.created_at || `${item.data}T${item.hora||'00:00'}`);
+        const dataStr = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+        const prob = item.total_problemas || 0;
+        const turnoClass = item.turno==='A'?'badge-turno-a':item.turno==='B'?'badge-turno-b':'badge-turno-c';
+        const situBadge = prob > 0
+            ? `<span class="badge badge-warning">⚠️ ${prob} problema(s)</span>`
+            : `<span class="badge badge-ok">✅ OK</span>`;
+
+        html+=`<tr>
+            <td style="white-space:nowrap;font-size:13px">${dataStr}</td>
+            <td><strong>${item.operador||'–'}</strong></td>
+            <td>${item.matricula||'–'}</td>
+            <td><span class="badge ${turnoClass}">Turno ${item.turno||'–'}</span></td>
+            <td>${item.horimetro||'–'}</td>
+            <td>${situBadge}</td>
+            <td style="text-align:center"><strong style="color:${prob>0?'#dc2626':'#059669'}">${prob}</strong></td>
+            <td><button class="btn btn-small" onclick='verDetalhes(${JSON.stringify(JSON.stringify(item))})'>👁️ Ver</button></td>
+        </tr>`;
+    });
+
+    html+='</tbody></table></div>';
+    el.innerHTML=html;
+}
+
+/* SEARCH */
+function setupSearch(){
+    document.getElementById('searchChecklist').addEventListener('input',function(){
+        const term=this.value.toLowerCase().trim();
+        const tbody=document.querySelector('#tabelaChecklists tbody');
+        if(!tbody)return;
+        let v=0;
+        tbody.querySelectorAll('tr').forEach(row=>{
+            const m=row.textContent.toLowerCase().includes(term);
+            row.style.display=m?'':'none'; if(m)v++;
+        });
+        const strip=document.querySelector('.total-strip');
+        if(strip)strip.textContent=`📊 ${v} check-list(s) encontrado(s)`;
+    });
+}
+
+/* FILTERS */
+function aplicarFiltros(){
+    const turno=document.getElementById('filtroTurno').value;
+    const situacao=document.getElementById('filtroSituacao').value;
+    const operador=document.getElementById('filtroOperador').value;
+    const ini=document.getElementById('filtroDataInicio').value;
+    const fim=document.getElementById('filtroDataFim').value;
+
+    filteredChecklists=allChecklists.filter(item=>{
+        if(turno&&item.turno!==turno)return false;
+        if(situacao==='ok'&&(item.total_problemas||0)>0)return false;
+        if(situacao==='problemas'&&(item.total_problemas||0)===0)return false;
+        if(operador&&item.operador!==operador)return false;
+        const dt=new Date(item.created_at||item.data);
+        if(ini&&dt<new Date(ini))return false;
+        if(fim){const f=new Date(fim);f.setHours(23,59,59,999);if(dt>f)return false;}
+        return true;
+    });
+    renderTabela(filteredChecklists);
+    document.getElementById('searchChecklist').value='';
+}
+function limparFiltros(){
+    ['filtroTurno','filtroSituacao','filtroOperador','filtroDataInicio','filtroDataFim'].forEach(id=>document.getElementById(id).value='');
+    filteredChecklists=[...allChecklists];
+    renderTabela(filteredChecklists);
+    document.getElementById('searchChecklist').value='';
+}
+
+/* VER DETALHES */
+function verDetalhes(jsonStr) {
+    const item = JSON.parse(jsonStr);
+    const dt = new Date(item.created_at || `${item.data}T${item.hora||'00:00'}`).toLocaleString('pt-BR');
+    const prob = item.total_problemas || 0;
+
+    document.getElementById('modalTitle').textContent = `📋 Check-list — ${item.operador}`;
+
+    let html = `
+        <div class="detail-grid">
+            <div class="detail-item"><strong>Operador</strong><span>${item.operador||'–'}</span></div>
+            <div class="detail-item"><strong>Matrícula</strong><span>${item.matricula||'–'}</span></div>
+            <div class="detail-item"><strong>Turno</strong><span class="badge ${item.turno==='A'?'badge-turno-a':item.turno==='B'?'badge-turno-b':'badge-turno-c'}">Turno ${item.turno||'–'}</span></div>
+            <div class="detail-item"><strong>Horímetro</strong><span>${item.horimetro||'–'}</span></div>
+            <div class="detail-item"><strong>Data</strong><span>${item.data||'–'}</span></div>
+            <div class="detail-item"><strong>Hora</strong><span>${item.hora||'–'}</span></div>
+            <div class="detail-item"><strong>Enviado em</strong><span style="font-size:13px">${dt}</span></div>
+            <div class="detail-item"><strong>Situação</strong><span>${prob>0?`<span class="badge badge-warning">⚠️ ${prob} problema(s)</span>`:'<span class="badge badge-ok">✅ Sem problemas</span>'}</span></div>
+        </div>
+    `;
+
+    if (item.respostas && Object.keys(item.respostas).length) {
+        // Group by sections
+        const sections = [
+            { title: '👁️ Inspeção Visual Geral', keys: ['q1','q2','q3','q4','q5'] },
+            { title: '⚡ Sistema Elétrico',        keys: ['q6','q7','q8','q9','q10','q11'] },
+            { title: '💧 Sistema Hidráulico',       keys: ['q12','q13'] },
+            { title: '🔧 Rodas',                    keys: ['q14','q15'] },
+            { title: '🛑 Freio e Direção',           keys: ['q16','q17','q18'] },
+        ];
+
+        html += '<div class="respostas-section">';
+        html += '<h3>Respostas da Inspeção</h3>';
+
+        sections.forEach(sec => {
+            const anyAnswered = sec.keys.some(k => item.respostas[k]);
+            if (!anyAnswered) return;
+            html += `<p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#999;margin:16px 0 8px">${sec.title}</p>`;
+            sec.keys.forEach(k => {
+                if (!item.respostas[k]) return;
+                const val = item.respostas[k];
+                const bad = isProblema(k, val);
+                const badgeClass = bad ? (val==='Sim'?'badge-sim-bad':'badge-nao-bad') : (val==='Sim'?'badge-sim-ok':'badge-nao-ok');
+                html += `<div class="resposta-row ${bad?'problema':''}">
+                    <span class="resposta-label">${PERGUNTAS[k]||k}</span>
+                    <span class="${badgeClass}">${val}</span>
+                </div>`;
+            });
+        });
+
+        html += '</div>';
+    }
+
+    document.getElementById('modalConteudo').innerHTML = html;
+    document.getElementById('modalDetalhes').classList.add('active');
+}
+
+function fecharModal(){document.getElementById('modalDetalhes').classList.remove('active');}
+document.getElementById('modalDetalhes').addEventListener('click',e=>{if(e.target===document.getElementById('modalDetalhes'))fecharModal();});
+
+function logout(){if(confirm('Deseja realmente sair?')){localStorage.removeItem('currentUser');window.location.href='login.html';}}
+</script>
+</body>
+</html>

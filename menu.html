@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manutenibilidade Logística</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/menu.css">
+
+    <meta name="theme-color" content="#1e293b">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+    <script src="notifications.js"></script>
+    <script src="push.js"></script>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <button class="hamburger-btn" id="hamburgerBtn">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+            <h1>🔧 Sistema de Manutenção</h1>
+        </div>
+        <div class="user-info">
+            <span class="user-name" id="userName">Usuário</span>
+            <span class="user-badge" id="userBadge">Admin</span>
+            <button class="btn-logout" id="btnLogoutMenu">Sair</button>
+        </div>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>Menu de Navegação</h2>
+            <p>Selecione uma opção abaixo</p>
+        </div>
+        
+
+        <div class="menu-section">
+            <div class="menu-section-title">Operação</div>
+            <a href="ocorrencias.html" style="text-decoration:none;">
+                <div class="menu-item" id="menuOcorrenciasExt">
+                    <span class="menu-icon">📋</span>
+                    <span>Central de Ocorrências</span>
+                </div>
+            </a>
+            <div class="menu-section-title">Manutenção</div>
+            <div class="menu-item" id="menuPredial">
+                <span class="menu-icon">🏢</span>
+                <span>Predial</span>
+            </div>
+            <div class="menu-item" id="menuEquipamentos">
+                <span class="menu-icon">⚙️</span>
+                <span>Equipamentos</span>
+            </div>
+            <div class="menu-item" id="menuOcorrencias">
+                <span class="menu-icon">📋</span>
+                <span>Ocorrências</span>
+            </div>
+        </div>
+        <a href="checklist-painel.html" class="menu-item"><span class="menu-icon">✅</span><span>Painel Check-lists</span></a>
+        <a href="checklist.html" class="menu-item"><span class="menu-icon">📝</span><span>Novo Check-list</span></a>
+
+        <div class="menu-section">
+            <div class="menu-section-title">Gestão</div>
+            <a href="usuarios.html" class="menu-item" id="menuUsuarios">
+                <span class="menu-icon">👥</span>
+                <span>Usuários</span>
+            </a>
+        </div>
+    
+    </div>
+
+    <div class="main-container">
+        <div class="content-section active" id="usuarios">
+            <div class="card">
+                <h2>👤 Cadastrar Novo Usuário</h2>
+                <div id="alertUsuarios"></div>
+                
+                <form id="formUsuario">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nome Completo *</label>
+                            <input type="text" id="usuarioNome" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Usuário *</label>
+                            <input type="text" id="usuarioLogin" required>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Senha *</label>
+                            <input type="password" id="usuarioSenha" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Perfil *</label>
+                            <select id="usuarioPerfil" required>
+                                <option value="">Selecione...</option>
+                                <option value="admin">Administrador</option>
+                                <option value="tecnico">Técnico</option>
+                                <option value="usuario">Usuário</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">Cadastrar Usuário</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>📋 Usuários Cadastrados</h2>
+                <div id="listaUsuarios">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Carregando usuários...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section" id="predial">
+            <div class="card">
+                <h2>🏢 Nova Manutenção Predial</h2>
+                <div id="alertPredial"></div>
+                
+                <form id="formPredial">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Local *</label>
+                            <input type="text" id="predialLocal" placeholder="Ex: Sala 101, Corredor A" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo de Manutenção *</label>
+                            <select id="predialTipo" required>
+                                <option value="">Selecione...</option>
+                                <option value="eletrica">Elétrica</option>
+                                <option value="hidraulica">Hidráulica</option>
+                                <option value="pintura">Pintura</option>
+                                <option value="estrutural">Estrutural</option>
+                                <option value="limpeza">Limpeza</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Prioridade *</label>
+                            <select id="predialPrioridade" required>
+                                <option value="">Selecione...</option>
+                                <option value="baixa">Baixa</option>
+                                <option value="media">Média</option>
+                                <option value="alta">Alta</option>
+                                <option value="urgente">Urgente</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Data Prevista *</label>
+                            <input type="date" id="predialData" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Descrição do Problema *</label>
+                        <textarea id="predialDescricao" placeholder="Descreva detalhadamente o problema..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Adicionar Imagens</label>
+                        <input type="file" id="predialImages" accept="image/*" multiple 
+                               onchange="handleImageUpload(event, selectedImagesPredial, 'predialImagePreview')">
+                        <div id="predialImagePreview" class="image-preview"></div>
+                    </div>
+                    <button type="submit" class="btn">Registrar Manutenção</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>📋 Manutenções Prediais Registradas</h2>
+                <div id="listaPredial">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Carregando manutenções...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section" id="equipamentos">
+            <div class="card">
+                <h2>⚙️ Nova Manutenção de Equipamento</h2>
+                <div id="alertEquipamentos"></div>
+                
+                <form id="formEquipamento">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nome do Equipamento *</label>
+                            <input type="text" id="equipNome" placeholder="Ex: Ar Condicionado, Impressora" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Patrimônio/Série</label>
+                            <input type="text" id="equipPatrimonio" placeholder="Número de patrimônio">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Tipo de Manutenção *</label>
+                            <select id="equipTipo" required>
+                                <option value="">Selecione...</option>
+                                <option value="preventiva">Preventiva</option>
+                                <option value="corretiva">Corretiva</option>
+                                <option value="preditiva">Preditiva</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status *</label>
+                            <select id="equipStatus" required>
+                                <option value="">Selecione...</option>
+                                <option value="pendente">Pendente</option>
+                                <option value="andamento">Em Andamento</option>
+                                <option value="concluido">Concluído</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Data da Manutenção *</label>
+                            <input type="date" id="equipData" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Responsável</label>
+                            <input type="text" id="equipResponsavel" placeholder="Nome do técnico">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Observações *</label>
+                        <textarea id="equipObservacoes" placeholder="Descreva o serviço realizado ou a ser realizado..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Adicionar Imagens</label>
+                        <input type="file" id="equipImages" accept="image/*" multiple 
+                               onchange="handleImageUpload(event, selectedImagesEquip, 'equipImagePreview')">
+                        <div id="equipImagePreview" class="image-preview"></div>
+                    </div>
+                    <button type="submit" class="btn">Registrar Manutenção</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>📋 Manutenções de Equipamentos Registradas</h2>
+                <div id="listaEquipamentos">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Carregando manutenções...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section" id="ocorrencias">
+            <div class="card">
+                <h2>📋 Central de Ocorrências</h2>
+                <p style="color: #666; margin-bottom: 24px;">Visualize e gerencie todas as ocorrências de manutenção predial e de equipamentos em um só lugar.</p>
+                
+                <div class="filters-section" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 24px; border-radius: 12px; margin-bottom: 24px;">
+                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #333;">🔍 Filtros</h3>
+                    
+                    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Tipo de Manutenção</label>
+                            <select id="filtroTipoManutencao">
+                                <option value="">Todos</option>
+                                <option value="predial">Predial</option>
+                                <option value="equipamento">Equipamento</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Status</label>
+                            <select id="filtroStatus">
+                                <option value="">Todos</option>
+                                <option value="pendente">Pendente</option>
+                                <option value="andamento">Em Andamento</option>
+                                <option value="concluido">Concluído</option>
+                                <option value="cancelado">Cancelado</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Prioridade</label>
+                            <select id="filtroPrioridade">
+                                <option value="">Todas</option>
+                                <option value="baixa">Baixa</option>
+                                <option value="media">Média</option>
+                                <option value="alta">Alta</option>
+                                <option value="urgente">Urgente</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Criado Por</label>
+                            <select id="filtroCriadoPor">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Data Inicial</label>
+                            <input type="date" id="filtroDataInicio">
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Data Final</label>
+                            <input type="date" id="filtroDataFim">
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px; margin-top: 20px;">
+                        <button class="btn" onclick="aplicarFiltros()" style="flex: 0 0 auto;">
+                            🔍 Aplicar Filtros
+                        </button>
+                        <button class="btn btn-secondary" onclick="limparFiltros()" style="flex: 0 0 auto;">
+                            ↺ Limpar Filtros
+                        </button>
+                    </div>
+                </div>
+
+                <div class="search-box">
+                    <input type="text" class="search-input" id="searchOcorrencias" placeholder="🔍 Buscar por código, local, equipamento ou tipo...">
+                    <span class="search-icon">🔍</span>
+                </div>
+
+                <div id="listaOcorrencias">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Carregando ocorrências...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalEditarUsuario" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✏️ Editar Usuário</h2>
+                <button class="modal-close" onclick="closeModal('modalEditarUsuario')">×</button>
+            </div>
+            <div id="alertEditUsuario"></div>
+            <form id="formEditUsuario">
+                <input type="hidden" id="editUsuarioId">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nome Completo *</label>
+                        <input type="text" id="editUsuarioNome" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Usuário *</label>
+                        <input type="text" id="editUsuarioLogin" required>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nova Senha (deixe em branco para manter)</label>
+                        <input type="password" id="editUsuarioSenha">
+                    </div>
+                    <div class="form-group">
+                        <label>Perfil *</label>
+                        <select id="editUsuarioPerfil" required>
+                            <option value="admin">Administrador</option>
+                            <option value="tecnico">Técnico</option>
+                            <option value="usuario">Usuário</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="editUsuarioAtivo">
+                        <label for="editUsuarioAtivo">Usuário Ativo</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modalEditarUsuario')">Cancelar</button>
+                    <button type="submit" class="btn">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalPermissoes" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔐 Gerenciar Permissões</h2>
+                <button class="modal-close" onclick="closeModal('modalPermissoes')">×</button>
+            </div>
+            <p><strong>Usuário:</strong> <span id="permUsuarioNome"></span></p>
+            <form id="formPermissoes">
+                <input type="hidden" id="permUsuarioId">
+                
+                <h3 style="margin-top: 20px;">Permissões de Usuários</h3>
+                <div class="permissions-grid">
+                    <div class="permission-item">
+                        <label>
+                            <input type="checkbox" id="permUsuariosVisualizar">
+                            Visualizar Usuários
+                        </label>
+                    </div>
+                    <div class="permission-item">
+                        <label>
+                            <input type="checkbox" id="permUsuariosCriar">
+                            Criar Usuários
+                        </label>
+                    </div>
+                    <div class="permission-item">
+                        <label>
+                            <input type="checkbox" id="permUsuariosEditar">
+                            Editar Usuários
+                        </label>
+                    </div>
+                    <div class="permission-item">
+                        <label>
+                            <input type="checkbox" id="permUsuariosExcluir">
+                            Excluir Usuários
+                        </label>
+                    </div>
+                    <div class="permission-item">
+                        <label>
+                            <input type="checkbox" id="permUsuariosPermissoes">
+                            Gerenciar Permissões
+                        </label>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px;">Permissões de Manutenção Predial</h3>
+                <div class="permissions-grid">
+                    <div class="permission-item">
+                        <label>
+                            <input type="checkbox" id="permPredialVisualizar">
+                            Visualizar Manutenções
+                        </label>
+                    </div>
+                    <div class="permission-item">
+                        <label>
+                            <input type="checkbox" id="permPredialCriar">
+                            Criar Manutenções
+                        </label>
+                    </div>
+                    <div class="permission-item">
+                        <label>
+                            <input type="checkbox" id="permPredialEditar">
+                            Editar Manutenções
+                        </label>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px;">Permissões de Manutenção de Equipamentos</h3>
+                <div class="permissions-grid">
+                    <div class="permission-item">
+                        <label>
+                            <input type="checkbox" id="permEquipamentosVisualizar">
+                            Visualizar Manutenções
+                        </label>
+                    </div>
+                    <div class="permission-item">
+                        <label>
+                            <input type="checkbox" id="permEquipamentosCriar">
+                            Criar Manutenções
+                        </label>
+                    </div>
+                    <div class="permission-item">
+                        <label>
+                            <input type="checkbox" id="permEquipamentosEditar">
+                            Editar Manutenções
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modalPermissoes')">Cancelar</button>
+                    <button type="submit" class="btn">Salvar Permissões</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalViewPredial" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🏢 Detalhes da Manutenção Predial</h2>
+                <button class="modal-close" onclick="closeModal('modalViewPredial')">×</button>
+            </div>
+            <div id="viewPredialContent"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modalViewPredial')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalEditarPredial" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✏️ Editar Manutenção Predial</h2>
+                <button class="modal-close" onclick="closeModal('modalEditarPredial')">×</button>
+            </div>
+            <div id="alertEditPredial"></div>
+            <form id="formEditPredial">
+                <input type="hidden" id="editPredialId">
+                
+                <div class="form-group">
+                    <label>Código de Rastreamento:</label>
+                    <p><span class="codigo-badge" id="editPredialCodigo"></span></p>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Local *</label>
+                        <input type="text" id="editPredialLocal" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de Manutenção *</label>
+                        <select id="editPredialTipo" required>
+                            <option value="eletrica">Elétrica</option>
+                            <option value="hidraulica">Hidráulica</option>
+                            <option value="pintura">Pintura</option>
+                            <option value="estrutural">Estrutural</option>
+                            <option value="limpeza">Limpeza</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Prioridade *</label>
+                        <select id="editPredialPrioridade" required>
+                            <option value="baixa">Baixa</option>
+                            <option value="media">Média</option>
+                            <option value="alta">Alta</option>
+                            <option value="urgente">Urgente</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status *</label>
+                        <select id="editPredialStatus" required>
+                            <option value="pendente">Pendente</option>
+                            <option value="andamento">Em Andamento</option>
+                            <option value="concluido">Concluído</option>
+                            <option value="cancelado">Cancelado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Data Prevista *</label>
+                        <input type="date" id="editPredialDataPrevista" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Data de Conclusão</label>
+                        <input type="date" id="editPredialDataConclusao">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Descrição do Problema *</label>
+                    <textarea id="editPredialDescricao" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Observações de Conclusão</label>
+                    <textarea id="editPredialObsConclusao" placeholder="Descreva como o problema foi resolvido..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Imagens</label>
+                    <input type="file" accept="image/*" multiple 
+                           onchange="handleImageUpload(event, editImagesPredial, 'editPredialImagePreview')">
+                    <div id="editPredialImagePreview" class="image-preview"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modalEditarPredial')">Cancelar</button>
+                    <button type="submit" class="btn">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalViewEquip" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Detalhes da Manutenção de Equipamento</h2>
+                <button class="modal-close" onclick="closeModal('modalViewEquip')">×</button>
+            </div>
+            <div id="viewEquipContent"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modalViewEquip')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalEditarEquip" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✏️ Editar Manutenção de Equipamento</h2>
+                <button class="modal-close" onclick="closeModal('modalEditarEquip')">×</button>
+            </div>
+            <div id="alertEditEquip"></div>
+            <form id="formEditEquip">
+                <input type="hidden" id="editEquipId">
+                
+                <div class="form-group">
+                    <label>Código de Rastreamento:</label>
+                    <p><span class="codigo-badge" id="editEquipCodigo"></span></p>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nome do Equipamento *</label>
+                        <input type="text" id="editEquipNome" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Patrimônio/Série</label>
+                        <input type="text" id="editEquipPatrimonio">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Tipo de Manutenção *</label>
+                        <select id="editEquipTipo" required>
+                            <option value="preventiva">Preventiva</option>
+                            <option value="corretiva">Corretiva</option>
+                            <option value="preditiva">Preditiva</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status *</label>
+                        <select id="editEquipStatus" required>
+                            <option value="pendente">Pendente</option>
+                            <option value="andamento">Em Andamento</option>
+                            <option value="concluido">Concluído</option>
+                            <option value="cancelado">Cancelado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Data da Manutenção *</label>
+                        <input type="date" id="editEquipData" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Data de Conclusão</label>
+                        <input type="date" id="editEquipDataConclusao">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Responsável</label>
+                    <input type="text" id="editEquipResponsavel">
+                </div>
+
+                <div class="form-group">
+                    <label>Observações *</label>
+                    <textarea id="editEquipObservacoes" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Observações de Conclusão</label>
+                    <textarea id="editEquipObsConclusao" placeholder="Descreva como o serviço foi realizado..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Imagens</label>
+                    <input type="file" accept="image/*" multiple 
+                           onchange="handleImageUpload(event, editImagesEquip, 'editEquipImagePreview')">
+                    <div id="editEquipImagePreview" class="image-preview"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modalEditarEquip')">Cancelar</button>
+                    <button type="submit" class="btn">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalForumPredial" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>💬 Fórum de Manutenção Predial</h2>
+                <button class="modal-close" onclick="closeModal('modalForumPredial')">×</button>
+            </div>
+
+            <div id="forumPredialContent"></div>
+
+            <div class="comments-section">
+                <div class="comments-header">
+                    <h3>💬 Comentários</h3>
+                    <span class="comments-count" id="comentariosPredialCount">0</span>
+                </div>
+
+                <div class="comment-form">
+                    <textarea id="comentarioPredialText" 
+                              placeholder="Adicione seu comentário, atualizações ou observações sobre esta manutenção..." 
+                              maxlength="1000"></textarea>
+                    
+                    <div id="comentarioPredialImagesPreview" class="comment-images-preview"></div>
+                    
+                    <div class="comment-form-footer">
+                        <label class="comment-attach-btn">
+                            📷 Anexar Fotos
+                            <input type="file" accept="image/*" multiple style="display: none;" 
+                                   onchange="handleCommentImageUpload(event, 'predial')">
+                        </label>
+                        <button class="btn" onclick="adicionarComentario('predial')">
+                            Enviar Comentário
+                        </button>
+                    </div>
+                </div>
+
+                <div class="comments-list" id="comentariosPredialList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Carregando comentários...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalForumEquipamento" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>💬 Fórum de Manutenção de Equipamento</h2>
+                <button class="modal-close" onclick="closeModal('modalForumEquipamento')">×</button>
+            </div>
+
+            <div id="forumEquipamentoContent"></div>
+
+            <div class="comments-section">
+                <div class="comments-header">
+                    <h3>💬 Comentários</h3>
+                    <span class="comments-count" id="comentariosEquipamentoCount">0</span>
+                </div>
+
+                <div class="comment-form">
+                    <textarea id="comentarioEquipamentoText" 
+                              placeholder="Adicione seu comentário, atualizações ou observações sobre esta manutenção..." 
+                              maxlength="1000"></textarea>
+                    
+                    <div id="comentarioEquipamentoImagesPreview" class="comment-images-preview"></div>
+                    
+                    <div class="comment-form-footer">
+                        <label class="comment-attach-btn">
+                            📷 Anexar Fotos
+                            <input type="file" accept="image/*" multiple style="display: none;" 
+                                   onchange="handleCommentImageUpload(event, 'equipamento')">
+                        </label>
+                        <button class="btn" onclick="adicionarComentario('equipamento')">
+                            Enviar Comentário
+                        </button>
+                    </div>
+                </div>
+
+                <div class="comments-list" id="comentariosEquipamentoList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Carregando comentários...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/comentarios.js"></script>
+    <script src="js/ocorrencias.js"></script>
+    <script>
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function toggleSidebar() {
+            hamburgerBtn.classList.toggle('active');
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+        }
+
+        function closeSidebar() {
+            hamburgerBtn.classList.remove('active');
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+        }
+
+        hamburgerBtn.addEventListener('click', toggleSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && sidebar.classList.contains('active')) {
+                closeSidebar();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = protectPage();
+            if (user) {
+                document.getElementById('userName').textContent = user.nome;
+                document.getElementById('userBadge').textContent = user.perfil || 'Usuário';
+                
+                const menuUsuarios = document.getElementById('menuUsuarios');
+                const menuPredial = document.getElementById('menuPredial');
+                const menuEquipamentos = document.getElementById('menuEquipamentos');
+                const menuOcorrencias = document.getElementById('menuOcorrencias');
+                
+                if (!hasPermission('perm_usuarios_visualizar')) {
+                    menuUsuarios.style.display = 'none';
+                }
+                
+                if (!hasPermission('perm_predial_visualizar')) {
+                    menuPredial.style.display = 'none';
+                }
+                
+                if (!hasPermission('perm_equipamentos_visualizar')) {
+                    menuEquipamentos.style.display = 'none';
+                }
+                
+                const canViewOcorrencias = hasPermission('perm_predial_visualizar') || hasPermission('perm_equipamentos_visualizar');
+                if (!canViewOcorrencias) {
+                    menuOcorrencias.style.display = 'none';
+                }
+                
+                let firstVisibleSection = null;
+                if (hasPermission('perm_usuarios_visualizar')) {
+                    firstVisibleSection = 'usuarios';
+                    menuUsuarios.classList.add('active');
+                } else if (hasPermission('perm_predial_visualizar')) {
+                    firstVisibleSection = 'predial';
+                    menuPredial.classList.add('active');
+                    menuUsuarios.classList.remove('active');
+                } else if (hasPermission('perm_equipamentos_visualizar')) {
+                    firstVisibleSection = 'equipamentos';
+                    menuEquipamentos.classList.add('active');
+                    menuUsuarios.classList.remove('active');
+                }
+                
+                if (firstVisibleSection) {
+                    showSection(firstVisibleSection);
+                }
+                
+                function setupMenuClick(menuElement, sectionName) {
+                    menuElement.addEventListener('click', function() {
+                        document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+                        this.classList.add('active');
+                        showSection(sectionName);
+                        if (window.innerWidth <= 768) {
+                            closeSidebar();
+                        }
+                    });
+                }
+
+                setupMenuClick(menuUsuarios, 'usuarios');
+                setupMenuClick(menuPredial, 'predial');
+                setupMenuClick(menuEquipamentos, 'equipamentos');
+                setupMenuClick(menuOcorrencias, 'ocorrencias');
+
+                document.getElementById('btnLogoutMenu').addEventListener('click', handleLogout);
+                document.getElementById('formUsuario').addEventListener('submit', handleCadastroUsuario);
+                document.getElementById('formPredial').addEventListener('submit', handleManutencaoPredial);
+                document.getElementById('formEquipamento').addEventListener('submit', handleManutencaoEquipamento);
+                document.getElementById('formEditUsuario').addEventListener('submit', salvarEdicaoUsuario);
+                document.getElementById('formPermissoes').addEventListener('submit', salvarPermissoes);
+                document.getElementById('formEditPredial').addEventListener('submit', salvarEdicaoPredial);
+                document.getElementById('formEditEquip').addEventListener('submit', salvarEdicaoEquip);
+                
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.addEventListener('click', function(e) {
+                        if (e.target === this) {
+                            this.classList.remove('active');
+                        }
+                    });
+                });
+
+                loadUsuarios();
+                loadManutencoesPrediais();
+                loadManutencoesEquipamentos();
+                loadOcorrencias();
+                populateFiltroUsuarios();
+            }
+        });
+    </script>
+</body>
+</html>
